@@ -1,0 +1,2 @@
+function ClipConductor(dependencies){
+} 

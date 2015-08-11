@@ -1,0 +1,46 @@
+{
+  "name": "clip-conductor.js",
+  "version": "0.0.1-alpha",
+  "description": "Javascript event based adaptive music library",
+  "main": "src/main.js",
+  "scripts": {},
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tmroyal/clip-conductor.js.git"
+  },
+  "keywords": [
+    "web",
+    "audio",
+    "api",
+    "web",
+    "audio",
+    "adaptive",
+    "music",
+    "music"
+  ],
+  "author": "thomas.m.royal@gmail.com (Thomas Royal)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/tmroyal/clip-conductor.js/issues"
+  },
+  "homepage": "https://github.com/tmroyal/clip-conductor.js",
+  "devDependencies": {
+    "browserify": "^11.0.1",
+    "chai": "^3.2.0",
+    "gulp": "^3.9.0",
+    "gulp-jshint": "^1.11.2",
+    "gulp-rename": "^1.2.2",
+    "gulp-uglify": "^1.2.0",
+    "gulp-util": "^3.0.6",
+    "jasmine-core": "^2.3.4",
+    "jshint-stylish": "^2.0.1",
+    "karma": "^0.13.9",
+    "karma-browserify": "^4.3.0",
+    "karma-chai": "^0.1.0",
+    "karma-chrome-launcher": "^0.2.0",
+    "karma-mocha": "^0.2.0",
+    "mocha": "^2.2.5",
+    "vinyl-buffer": "^1.0.0",
+    "vinyl-source-stream": "^1.1.0"
+  }
+}
