@@ -58,19 +58,7 @@ function runTest(done){
 // included to attempt lint free test
 gulp.task('freeTest', runTest);
 
-gulp.task('startTestServer', function(){
-  testServer = new karma.Server({
-    configFile: __dirname + '/karma.conf.js',
-    singleRun: false,
-    autoWatch: false,
-    port: 9876 // force in case of hung processes
-  }).start();  
-
-});
-
-gulp.task('test', ['lint'], function(done){
-  karma.runner.run({port: 9876}, testsComplete(done));
-});
+gulp.task('test', ['lint'], runTest);
 
 // lint runner
 
@@ -81,7 +69,7 @@ gulp.task('lint', function(){
              .pipe(jshint.reporter('fail'));
 });
 
-gulp.task('watch', ['startTestServer'],function(){
+gulp.task('watch', function(){
   watch('src/**/*.js', batch(function(events, done){
     gulp.start('compile', done);
   }));
