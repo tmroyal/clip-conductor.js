@@ -1,3 +1,5 @@
-module.exports = function Player( audioContext, observedScheduler){
-  this.true = true;
-};
+function Player(audioContext, scheduler, requestObject){
+  scheduler.observe();
+}
+
+module.exports = Player;

@@ -1,9 +1,16 @@
 var Player = require('./Player');
-var mockScheduler, mockAudioContext, mockRequestObject;
+var scheduler, audioContext, requestObject, player;
 
 
 describe('Player', function(){
-  it('should observe scheduler');
+  it('should observe scheduler', function(){
+    scheduler = {
+      observe: sinon.spy()
+    }
+    player = new Player(audioContext, scheduler, requestObject);
+
+    scheduler.observe.called.should.be.true;
+  });
   it('should play file at time specified by scheduler');
 
   it('should load given files');
