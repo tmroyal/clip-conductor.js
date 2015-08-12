@@ -10,13 +10,11 @@ var rename = require('gulp-rename');
 var jshint = require('gulp-jshint');
 var stylish = require('jshint-stylish');
 var gutil = require('gulp-util');
+var watch = require('gulp-watch');
+var batch = require('gulp-batch');
+var testServer;
 
 var DEST = './dist';
-
-// ***************
-// TODO setup file watching and auto browserifying
-// with new main entrypoint
-// ***************
 
 // collect dependencies (browserify), and minifiy
 // requires test task to be complete, which in turn
@@ -39,25 +37,40 @@ gulp.task('compile', ['test'], function () {
 });
 
 // test runners
-
-function runTest(done){
-  function testsComplete(result){
-    var err;
-    if (result > 0){
-      err = new gutil.PluginError('test', 'Test runner reported '+result+' error(s).');
+function testsComplete(done){
+  var err;
+  return function(exitCode){
+    if (exitCode > 0){
+      err = new gutil.PluginError('test', 'Test runner reported '+exitCode+' error(s).');
     }
     done(err);
   }
+}
+
+function runTest(done){
 
   new karma.Server({
     configFile: __dirname + '/karma.conf.js',
     singleRun: true
-  }, testsComplete).start();
+  }, testsComplete(done)).start();
 }
 
-gulp.task('test', ['lint'], runTest); 
 // included to attempt lint free test
 gulp.task('freeTest', runTest);
+
+gulp.task('startTestServer', function(){
+  testServer = new karma.Server({
+    configFile: __dirname + '/karma.conf.js',
+    singleRun: false,
+    autoWatch: false,
+    port: 9876 // force in case of hung processes
+  }).start();  
+
+});
+
+gulp.task('test', ['lint'], function(done){
+  karma.runner.run({port: 9876}, testsComplete(done));
+});
 
 // lint runner
 
@@ -68,4 +81,11 @@ gulp.task('lint', function(){
              .pipe(jshint.reporter('fail'));
 });
 
+gulp.task('watch', ['startTestServer'],function(){
+  watch('src/**/*.js', batch(function(events, done){
+    gulp.start('compile', done);
+  }));
+});
+
 gulp.task('default', ['compile']);
+
