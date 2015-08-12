@@ -13,8 +13,16 @@ var gutil = require('gulp-util');
 
 var DEST = './dist';
 
+// ***************
+// TODO setup file watching and auto browserifying
+// with new main entrypoint
+// ***************
+
 // collect dependencies (browserify), and minifiy
-gulp.task('compile', function () {
+// requires test task to be complete, which in turn
+// requires lint task to be complete
+
+gulp.task('compile', ['test'], function () {
 
   var b = browserify({
     entries: './src/main.js',
@@ -30,7 +38,9 @@ gulp.task('compile', function () {
     .pipe(gulp.dest(DEST));
 });
 
-gulp.task('test', function(done) {
+// test runners
+
+function runTest(done){
   function testsComplete(result){
     var err;
     if (result > 0){
@@ -43,14 +53,19 @@ gulp.task('test', function(done) {
     configFile: __dirname + '/karma.conf.js',
     singleRun: true
   }, testsComplete).start();
-});
+}
 
-// perform one lint run
+gulp.task('test', ['lint'], runTest); 
+// included to attempt lint free test
+gulp.task('freeTest', runTest);
+
+// lint runner
+
 gulp.task('lint', function(){ 
   return gulp.src('./src/**/*.js')
              .pipe(jshint())
-             .pipe(jshint.reporter(stylish));
+             .pipe(jshint.reporter(stylish))
+             .pipe(jshint.reporter('fail'));
 });
 
 gulp.task('default', ['compile']);
-
