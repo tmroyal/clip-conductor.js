@@ -17,7 +17,7 @@ Server.prototype.loadFile = function(filename){
           );
         }
       }
-    }
+    };
 
   });
 };

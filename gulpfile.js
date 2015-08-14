@@ -63,7 +63,7 @@ gulp.task('test', ['lint'], runTest);
 // lint runner
 
 gulp.task('lint', function(){ 
-  return gulp.src('./src/**/*.js')
+  return gulp.src(['./src/**/*.js', '!./src/**/*_test.js'])
              .pipe(jshint())
              .pipe(jshint.reporter(stylish))
              .pipe(jshint.reporter('fail'));
