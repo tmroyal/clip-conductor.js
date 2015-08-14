@@ -1,11 +1,10 @@
-var Player;
+var Player = require('./Player');
 var scheduler, audioContext, server, player;
 
 beforeEach(function(){
   scheduler = {
     observe: function(){}
   }
-  Player = require('./Player');
 });
 
 describe('Player', function(){
