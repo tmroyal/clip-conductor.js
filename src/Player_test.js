@@ -75,8 +75,6 @@ describe('Player', function(){
       };
     });
 
-    it('should not attempt to load already loaded files');
-
     it('should call server.loadfile with fn', function(){
       var spy = sinon.spy();
 
