@@ -44,6 +44,7 @@
     "karma-mocha": "^0.2.0",
     "karma-mocha-reporter": "^1.1.1",
     "karma-sinon": "^1.0.4",
+    "lodash": "^3.10.1",
     "mocha": "^2.2.5",
     "sinon": "^1.15.4",
     "vinyl-buffer": "^1.0.0",
