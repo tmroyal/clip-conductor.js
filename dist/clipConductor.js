@@ -1,4 +1,4 @@
-(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 (function (global){
 /**
  * @license
@@ -12364,7 +12364,7 @@ function Player(audioContext, scheduler, server){
 
 Player.prototype.playSound = function(fileInfo, time){
   if (this.sounds[fileInfo.handle]){
-    this.sounds[fileInfo.handle].start(time);
+    this.sounds[fileInfo.handle].start(time || 0);
   }
 };
 
@@ -12428,7 +12428,7 @@ Scheduler.prototype.trigger = function(messageName){
   if (matches){
     for (var match_i = 0; match_i < matches.length; match_i++){
       for (var sub_i = 0; sub_i < this.subscriptions.length; sub_i++){
-        this.subscriptions[sub_i](matches[match_i]);
+        this.subscriptions[sub_i](matches[match_i], 0);
       } 
     }
   }
@@ -12463,32 +12463,33 @@ Server.prototype.loadFile = function(filename){
 
 module.exports = Server;
 
-},{}],5:[function(require,module,exports){
+},{}],"ClipConductor":[function(require,module,exports){
+var Server = require('./Server');
+var Player = require('./Player'); 
+var Scheduler = require('./Scheduler');
 
-function ClipConductor(dependencies){
-  Server = dependencies.Server || require('./Server');
-  Player = dependencies.Player || require('./Player');
-  Scheduler = dependencies.Scheduler || require('./Scheduler');
-  AudioContext = dependencies.AudioContext || AudioContext;
-
+function ClipConductor(){
   this.audioContext = new AudioContext();
   this.server = new Server();
   this.scheduler = new Scheduler();
-  this.player = new Player(audioContext, scheduler, server);
+  this.player = new Player(this.audioContext, this.scheduler, this.server);
 } 
 
 ClipConductor.prototype.addSound = function(msg, soundInfo){
   return this.player.loadFile(soundInfo)
   .then(function(){
     this.scheduler.on(msg, soundInfo);
-  })
-  .catch(function(){
+  }.bind(this))
+  .catch(function(er){
     console.error('ClipConductor: there was a problem loading '+soundInfo.filename);
+    console.error(er);
   });
 };
 
 ClipConductor.prototype.trigger = function(msg){
-  this.scheduler.trigger(msg);
+  this.scheduler.trigger(msg, 0);
 };
 
-},{"./Player":2,"./Scheduler":3,"./Server":4}]},{},[5]);
+module.exports = ClipConductor;
+
+},{"./Player":2,"./Scheduler":3,"./Server":4}]},{},["ClipConductor"]);

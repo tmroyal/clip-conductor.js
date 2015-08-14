@@ -42,6 +42,30 @@ describe('Player', function(){
       sound.start.calledWith(3).should.be.true;
         
     });
+
+    it('should set time of zero if no other value provided', function(){
+      var sound = {
+        start: sinon.spy()
+      };
+      var fileInfo = { handle: 'testSound' };
+
+      scheduler = {
+        observe: function(cb){
+          this.subscription = cb;
+        },
+        test: function(){
+          this.subscription(fileInfo);
+        }
+      };
+      
+      player = new Player(audioContext, scheduler, server);
+      player.sounds['testSound'] = sound;
+      
+      scheduler.test();
+     
+      sound.start.calledWith(0).should.be.true;
+        
+    });
   });
 
   describe('loadFile',function(){

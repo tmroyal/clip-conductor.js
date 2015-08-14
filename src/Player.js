@@ -8,7 +8,7 @@ function Player(audioContext, scheduler, server){
 
 Player.prototype.playSound = function(fileInfo, time){
   if (this.sounds[fileInfo.handle]){
-    this.sounds[fileInfo.handle].start(time);
+    this.sounds[fileInfo.handle].start(time || 0);
   }
 };
 

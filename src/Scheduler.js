@@ -33,7 +33,7 @@ Scheduler.prototype.trigger = function(messageName){
   if (matches){
     for (var match_i = 0; match_i < matches.length; match_i++){
       for (var sub_i = 0; sub_i < this.subscriptions.length; sub_i++){
-        this.subscriptions[sub_i](matches[match_i]);
+        this.subscriptions[sub_i](matches[match_i], 0);
       } 
     }
   }

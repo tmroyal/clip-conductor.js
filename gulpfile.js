@@ -27,6 +27,7 @@ gulp.task('compile', ['test'], function () {
     debug: false
   });
 
+  b.require('./src/main.js', {expose: 'ClipConductor'});
   return b.bundle()
     .pipe(source('clipConductor.js'))
     .pipe(buffer())

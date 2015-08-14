@@ -83,6 +83,13 @@ describe('Scheduler', function(){
       }
     );
 
+    it('should call subscription with time of zero', 
+      function(){
+        scheduler.trigger('testMsg');
+        spy.args[0][1].should.equal(0);
+      }
+    );
+
     it('should call subscription multiple times if multiple files'+
        'assigned to same message', function(){
           var fileInfo2 = { handle: 'test2' };
