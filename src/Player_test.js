@@ -20,9 +20,18 @@ describe('Player', function(){
     });
 
     it('should play sound on scheduler event', function(){
-      var sound = {
+      var returnObj = {
+        connect: sinon.spy(),
         start: sinon.spy()
       };
+
+      var audioContext = {
+        createBufferSource: function(){
+          return returnObj;
+        },
+        destination: 'audio context destination'
+      };
+
       var fileInfo = { handle: 'testSound' };
 
       scheduler = {
@@ -35,18 +44,28 @@ describe('Player', function(){
       };
       
       player = new Player(audioContext, scheduler, server);
-      player.sounds['testSound'] = sound;
+      player.sounds['testSound'] = 'the buffer';
       
       scheduler.test();
-     
-      sound.start.calledWith(3).should.be.true;
-        
+      console.log(returnObj);
+      returnObj.buffer.should.equal('the buffer');
+      returnObj.connect.calledWith(audioContext.destination)
+        .should.be.true;
+      returnObj.start.calledWith(3).should.be.true;
     });
 
     it('should set time of zero if no other value provided', function(){
-      var sound = {
-        start: sinon.spy()
+      var returnObj = {
+        start: sinon.spy(),
+        connect: function(){}
       };
+
+      var audioContext = {
+        createBufferSource: function(){
+          return returnObj;
+        }
+      };
+
       var fileInfo = { handle: 'testSound' };
 
       scheduler = {
@@ -59,11 +78,11 @@ describe('Player', function(){
       };
       
       player = new Player(audioContext, scheduler, server);
-      player.sounds['testSound'] = sound;
+      player.sounds['testSound'] = 'the buffer';
       
       scheduler.test();
      
-      sound.start.calledWith(0).should.be.true;
+      returnObj.start.calledWith(0).should.be.true;
         
     });
   });
@@ -138,20 +157,11 @@ describe('Player', function(){
           cb('the buffer');
         }
 
-        audioContext.createBufferSource = function(){
-          return {
-            connect: spy
-          };
-        };
-
         player = new Player(audioContext, scheduler, server);
 
         return player.loadFile(fileInfo).then(function(){
-          player.sounds[fileInfo.handle].buffer
+          player.sounds[fileInfo.handle]
             .should.equal('the buffer');
-          player.sounds[fileInfo.handle].connect
-            .calledWith(audioContext.destination)
-            .should.be.true;
         }); 
       }
     );

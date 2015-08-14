@@ -8,7 +8,10 @@ function Player(audioContext, scheduler, server){
 
 Player.prototype.playSound = function(fileInfo, time){
   if (this.sounds[fileInfo.handle]){
-    this.sounds[fileInfo.handle].start(time || 0);
+    var sound = this.audioContext.createBufferSource();
+    sound.buffer = this.sounds[fileInfo.handle];
+    sound.connect(this.audioContext.destination);
+    sound.start(time || 0);
   }
 };
 
@@ -19,12 +22,8 @@ Player.prototype.loadFile = function(fileInfo, done, error){
 
     this.audioContext.decodeAudioData(data, function(buffer){
 
-      this.sounds[fileInfo.handle] = 
-        this.audioContext.createBufferSource();
-      this.sounds[fileInfo.handle].buffer = buffer;
-      this.sounds[fileInfo.handle]
-          .connect(this.audioContext.destination);
-      
+      this.sounds[fileInfo.handle] = buffer;
+
       if (done){ done(); }
 
     }.bind(this), error);
