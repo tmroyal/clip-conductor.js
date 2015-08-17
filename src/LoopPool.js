@@ -1,3 +1,5 @@
+var Scheduler = require('./Scheduler');
+
 function LoopPool(){
 }
 

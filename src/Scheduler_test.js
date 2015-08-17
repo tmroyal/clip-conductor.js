@@ -2,7 +2,7 @@ describe('Scheduler', function(){
   var Scheduler = require('./Scheduler');
   var scheduler;
   beforeEach(function(){
-    scheduler = new Scheduler();
+    scheduler = Scheduler.new();
   });
 
   describe('observe', function(){
