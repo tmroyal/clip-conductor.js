@@ -47,7 +47,6 @@ describe('Player', function(){
       player.sounds['testSound'] = 'the buffer';
       
       scheduler.test();
-      console.log(returnObj);
       returnObj.buffer.should.equal('the buffer');
       returnObj.connect.calledWith(audioContext.destination)
         .should.be.true;

@@ -1,6 +1,5 @@
 var Scheduler = require('./Scheduler');
 
-function LoopPool(){
-}
+var LoopPool = Object.create(Scheduler);
 
 module.exports = LoopPool;
