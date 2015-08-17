@@ -9,12 +9,12 @@ beforeEach(function(){
 
 describe('Player', function(){
 
-  describe('new Player()', function(){
+  describe('Player.new()', function(){
     it('should observe scheduler', function(){
       scheduler = {
         observe: sinon.spy()
       }
-      player = new Player(audioContext, scheduler, server);
+      player = Player.new(audioContext, scheduler, server);
 
       scheduler.observe.called.should.be.true;
     });
@@ -43,7 +43,7 @@ describe('Player', function(){
         }
       };
       
-      player = new Player(audioContext, scheduler, server);
+      player = Player.new(audioContext, scheduler, server);
       player.sounds['testSound'] = 'the buffer';
       
       scheduler.test();
@@ -77,7 +77,7 @@ describe('Player', function(){
         }
       };
       
-      player = new Player(audioContext, scheduler, server);
+      player = Player.new(audioContext, scheduler, server);
       player.sounds['testSound'] = 'the buffer';
       
       scheduler.test();
@@ -127,7 +127,7 @@ describe('Player', function(){
       };
 
         
-      player = new Player(audioContext, scheduler, server);
+      player = Player.new(audioContext, scheduler, server);
       player.loadFile(fileInfo);
 
       spy.calledWith(fileInfo.filename).should.be.true;
@@ -142,7 +142,7 @@ describe('Player', function(){
         });
       };
 
-      player = new Player(audioContext, scheduler, server);
+      player = Player.new(audioContext, scheduler, server);
       return player.loadFile(fileInfo).then(function(){ 
         audioContext.decodeAudioData.calledWith('audio data')
           .should.be.true;
@@ -157,7 +157,7 @@ describe('Player', function(){
           cb('the buffer');
         }
 
-        player = new Player(audioContext, scheduler, server);
+        player = Player.new(audioContext, scheduler, server);
 
         return player.loadFile(fileInfo).then(function(){
           player.sounds[fileInfo.handle]
@@ -168,7 +168,7 @@ describe('Player', function(){
 
     it('should call done callback on success', function(){
       var spy = sinon.spy();
-      player = new Player(audioContext, scheduler, server);
+      player = Player.new(audioContext, scheduler, server);
 
       return player.loadFile(fileInfo, spy).then(function(){
         spy.called.should.be.true;
@@ -182,7 +182,7 @@ describe('Player', function(){
       audioContext.decodeAudioData = function(data, succ, er){
         er();
       };
-      player = new Player(audioContext, scheduler, server);
+      player = Player.new(audioContext, scheduler, server);
 
       return player.loadFile(fileInfo, null, spy).then(function(){
         spy.called.should.be.true;
@@ -198,7 +198,7 @@ describe('Player', function(){
         });
       };
 
-      player = new Player(audioContext, scheduler, server);
+      player = Player.new(audioContext, scheduler, server);
 
       return player.loadFile(fileInfo, null, spy).then(function(){
         spy.called.should.be.true;
