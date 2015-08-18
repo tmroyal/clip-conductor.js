@@ -135,7 +135,7 @@ describe('LoopPool', function(){
 
         loopPool.playSound(0);
 
-        timeout.args[0][1].should.equal(2700);
+        timeout.args[0][1].should.equal(3000);
         fb.args[0][1].should.equal(3);
 
         setTimeout.restore();
@@ -190,10 +190,11 @@ describe('LoopPool', function(){
         loopPool.addSound(testSound, {min:0, max:1});
         loopPool.start();
         
-        expect(Math.abs(timeout.args[0][1]-9))
-          .to.be.below(0.0001); // value should be about 9
-        // = minduration*padding*1000ms
-        // = 0.01*0.9*1000
+        expect(Math.abs(timeout.args[0][1]-10))
+          .to.be.below(0.0001); 
+        // value should be about 10
+        // = minduration*1000ms
+        // = 0.01*1000
         
         setTimeout.restore(); 
       }

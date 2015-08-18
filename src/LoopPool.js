@@ -1,6 +1,6 @@
 var Scheduler = require('./Scheduler');
 var _ = require('lodash');
-var PADDING = 0.9, BUFFER = 0.1, MIN_DURATION = 0.01;
+var BUFFER = 0.1, MIN_DURATION = 0.01;
 
 var LoopPool = Object.create(Scheduler);
 
@@ -77,7 +77,7 @@ LoopPool.playSound = function(currentTime){
     if (duration < MIN_DURATION){ duration = MIN_DURATION; }
     // TODO bounds and type checking on duration
     var nextTime = currentTime+duration;
-    var timeout = duration*PADDING*1000;
+    var timeout = duration*1000;
     setTimeout(this.playSound.bind(this, nextTime), timeout);
   }
 };
