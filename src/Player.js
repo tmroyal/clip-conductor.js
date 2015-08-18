@@ -15,6 +15,8 @@ var Player = {
       sound.buffer = this.sounds[fileInfo.handle];
       sound.connect(this.audioContext.destination);
       sound.start(time || 0);
+
+      return sound.buffer.duration;
     }
   },
 

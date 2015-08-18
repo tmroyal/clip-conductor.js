@@ -22,7 +22,7 @@ describe('Player', function(){
     it('should play sound on scheduler event', function(){
       var returnObj = {
         connect: sinon.spy(),
-        start: sinon.spy()
+        start: sinon.spy(),
       };
 
       var audioContext = {
@@ -51,6 +51,23 @@ describe('Player', function(){
       returnObj.connect.calledWith(audioContext.destination)
         .should.be.true;
       returnObj.start.calledWith(3).should.be.true;
+    });
+
+    it('should return duration on playSound', function(){
+      var audioContext = {
+        createBufferSource: function(){
+          return { 
+            connect: function(){},
+            start: function(){},
+          };
+        },
+        destination: 'audio context destination'
+      };
+      player = Player.new(audioContext, scheduler, server);
+      player.sounds['testSound'] = {duration: 3};
+
+      player.playSound({handle:'testSound'})
+        .should.equal(3);
     });
 
     it('should set time of zero if no other value provided', function(){
