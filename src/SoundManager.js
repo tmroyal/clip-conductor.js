@@ -1,45 +1,48 @@
-var SoundManager = {
+var _ = require('lodash');
 
-  new: function(audioContext, scheduler, server){
-    var manager = Object.create(this);
-    manager.server = server;
-    manager.sounds = {};
-    manager.audioContext = audioContext;
+var SoundManager = function(audioContext, server){
+  this.server = server;
+  this.sounds = {};
+  this.audioContext = audioContext;
+};
 
-    scheduler.observe(manager.playSound.bind(manager));
+SoundManager.prototype.playSound = function(handle, time){
+  if (_.isObject(handle)){ handle = handle.handle; }
 
-    return manager;
-  }, 
+  if (this.sounds[handle]){
+    var sound = this.audioContext.createBufferSource();
 
-  playSound: function(fileInfo, time){
-    if (this.sounds[fileInfo.handle]){
-      var sound = this.audioContext.createBufferSource();
+    sound.buffer = this.sounds[handle].buffer;
+    sound.connect(this.audioContext.destination);
+    sound.start(time || 0);
 
-      sound.buffer = this.sounds[fileInfo.handle];
-      sound.connect(this.audioContext.destination);
-      sound.start(time || 0);
-
-      return sound.buffer.duration;
-    }
-  },
-
-  loadFile: function(fileInfo, done, error){
-    return this.server.loadFile(fileInfo.filename)
-
-    .then(function(data){
-
-      this.audioContext.decodeAudioData(data, function(buffer){
-
-        this.sounds[fileInfo.handle] = buffer;
-
-        if (done){ done(); }
-
-      }.bind(this), error);
-
-    }.bind(this))
-
-    .catch(error);
+    return sound.buffer.duration;
+  } else {
+    console.warn('ClipConductor.SoundManager: cannot find sound: '+
+        handle);
   }
+};
+
+SoundManager.prototype.loadFile = function(fileInfo, done, error){
+  // TODO error if fileInfo has no handle
+  return this.server.loadFile(fileInfo.filename)
+
+  .then(function(data){
+
+    this.audioContext.decodeAudioData(data, function(buffer){
+
+      this.sounds[fileInfo.handle] = {
+        buffer: buffer,
+        info: fileInfo
+      }
+
+      if (done){ done(); }
+
+    }.bind(this), error);
+
+  }.bind(this))
+
+  .catch(error);
 };
 
 module.exports = SoundManager;
