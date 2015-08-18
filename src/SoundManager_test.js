@@ -9,13 +9,20 @@ beforeEach(function(){
 
 describe('SoundManager', function(){
   describe('SoundManager()', function(){
-    it('should set audio context');
-    it('should set server');
-    it('shold set sounds to empty obj');
+    it('should set audio context and server', function(){
+      var ac = {};
+      var server = {};
+      manager = new SoundManager(ac, server);
+      manager.audioContext.should.equal(ac);
+      manager.server.should.equal(server);
+    });
+    it('shold set sounds to empty obj', function(){
+      manager.sounds.should.deep.equal({});
+    });
   });
 
   describe('playSound', function(){
-    it.only('should play the sound with given handle at spec time', 
+    it('should play the sound with given handle at spec time', 
       function(){
         var returnObj = {
           start: sinon.spy(),
@@ -172,9 +179,8 @@ describe('SoundManager', function(){
         spy(fn);
         return new Promise(function(){});
       };
-
         
-      manager = SoundManager.new(audioContext, scheduler, server);
+      manager = new SoundManager(audioContext, server);
       manager.loadFile(fileInfo);
 
       spy.calledWith(fileInfo.filename).should.be.true;
@@ -189,14 +195,14 @@ describe('SoundManager', function(){
         });
       };
 
-      manager = SoundManager.new(audioContext, scheduler, server);
+      manager = new SoundManager(audioContext, server);
       return manager.loadFile(fileInfo).then(function(){ 
         audioContext.decodeAudioData.calledWith('audio data')
           .should.be.true;
       });
     });
 
-    it('should create and connect buffer stored on this.sounds',
+    it('should store buffer on this.sounds',
       function(){
         var spy = sinon.spy();
 
@@ -204,18 +210,21 @@ describe('SoundManager', function(){
           cb('the buffer');
         }
 
-        manager = SoundManager.new(audioContext, scheduler, server);
+        manager = new SoundManager(audioContext, server);
 
         return manager.loadFile(fileInfo).then(function(){
           manager.sounds[fileInfo.handle]
-            .should.equal('the buffer');
+            .should.deep.equal({
+              buffer: 'the buffer',
+              info: fileInfo
+            });
         }); 
       }
     );
 
     it('should call done callback on success', function(){
       var spy = sinon.spy();
-      manager = SoundManager.new(audioContext, scheduler, server);
+      manager = new SoundManager(audioContext, server);
 
       return manager.loadFile(fileInfo, spy).then(function(){
         spy.called.should.be.true;
@@ -229,7 +238,7 @@ describe('SoundManager', function(){
       audioContext.decodeAudioData = function(data, succ, er){
         er();
       };
-      manager = SoundManager.new(audioContext, scheduler, server);
+      manager = new SoundManager(audioContext, server);
 
       return manager.loadFile(fileInfo, null, spy).then(function(){
         spy.called.should.be.true;
@@ -245,7 +254,7 @@ describe('SoundManager', function(){
         });
       };
 
-      manager = SoundManager.new(audioContext, scheduler, server);
+      manager = new SoundManager(audioContext, server);
 
       return manager.loadFile(fileInfo, null, spy).then(function(){
         spy.called.should.be.true;
@@ -253,6 +262,7 @@ describe('SoundManager', function(){
 
     });
 
-    
+    it('should raise error if fileInfo does not contain handle');    
+    it('should raise error if fileInfo does not contain filename');    
   });
 });
