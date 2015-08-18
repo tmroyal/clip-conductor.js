@@ -6,9 +6,12 @@ var loopPool;
 var testSound, testRange;
 var testSound2, testRange2;
 
+var audioContext = { currentTime: 3 };
+
 
 beforeEach(function(){
-  loopPool = LoopPool.new('name');
+  loopPool = LoopPool.new('name', audioContext);
+  loopPool.observe(function(){ return 2; });
   testSound = { handle: 'testSound', filename:'testSound.mp3'};
   testRange = { min: 0.1, max: 0.5};
   testSound2 = { handle: 'testSound2', filename:'testSound2.mp3'};
@@ -30,6 +33,10 @@ describe('LoopPool', function(){
     it('should set name property', function(){
       loopPool = LoopPool.new('name');
       loopPool.name.should.equal('name');
+    });
+
+    it('should set audioContext', function(){
+      loopPool.audioContext.should.equal(audioContext);
     });
 
   });
@@ -101,6 +108,81 @@ describe('LoopPool', function(){
       loopPool.removeSound(testSound);
       loopPool.recognizedEvents.should.deep.equal({});
     });
+  });
+
+  describe('.playSound', function(){
+    it('should call to play sound immediately', function(){
+      var subscription = sinon.spy();
+      loopPool = LoopPool.new('name', audioContext);
+      loopPool.observe(subscription);
+
+      loopPool.playing = true;
+      loopPool.addSound(testSound, {min:0, max: 1});
+
+      loopPool.playSound(0);
+      subscription.args[0].should.deep.equal([testSound, 0]);
+    });
+
+    it('should call itself after duration given '+
+        'by file scaled by buffer', 
+      function(){
+        var timeout = sinon.spy(window, 'setTimeout');
+        var fb = sinon.spy(Function.prototype, 'bind');
+        var subscription = function(){ return 3;};
+        loopPool = LoopPool.new('name', audioContext);
+        loopPool.observe(subscription);
+        loopPool.playing = true;
+
+        loopPool.playSound(0);
+        timeout.args[0][1].should.equal(2700);
+        fb.args[0][1].should.equal(3);
+
+        setTimeout.restore();
+        Function.prototype.bind.restore();
+      }
+    );
+
+    it('should not play a sound if it is stop has been called', 
+      function(){
+        var subscription = sinon.spy();
+        loopPool = LoopPool.new('name', audioContext);
+        loopPool.observe(subscription);
+        loopPool.stop(); // playing=false
+        loopPool.playSound(0);
+        subscription.called.should.be.false;
+      });
+  });
+
+  describe('.start', function(){
+    it('should set playing to true', function(){
+      loopPool.start();
+      loopPool.playing.should.be.true;
+    });
+
+    it('should call playsound with currentTime+buffer',
+      function(){
+        var spy = sinon.spy(loopPool, 'playSound');
+        loopPool.addSound(testSound, {min:0, max:1});
+        loopPool.start();
+        // 3 defined by test fixtures above + PADDING
+        spy.calledWith(3.1).should.equal(true);
+        loopPool.playSound.restore();
+      }
+    );
+  });
+
+  describe('.stop', function(){
+    it('should set playing to false', function(){
+      loopPool.stop();
+      loopPool.playing.should.be.false;
+    });
+  });
+
+  describe('.set', function(){
+    it('should set current value', function(){
+      loopPool.set(0.5);
+      loopPool.value.should.equal(0.5);
+    }); 
   });
 
 });

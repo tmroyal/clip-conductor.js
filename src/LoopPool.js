@@ -1,11 +1,16 @@
 var Scheduler = require('./Scheduler');
 var _ = require('lodash');
+var PADDING = 0.9, BUFFER = 0.1;
 
 var LoopPool = Object.create(Scheduler);
 
-LoopPool.new = function(name){
+LoopPool.new = function(name, audioContext){
   var lp = Scheduler.new.call(this);
+
   lp.name = name;
+  lp.value = 0;
+  lp.audioContext = audioContext;
+
   return lp;
 };
 
@@ -56,6 +61,34 @@ LoopPool.getSound = function(value){
   } else {
     return closestEvent.sound;
   }
+};
+
+LoopPool.start = function(){
+  this.playing = true;  
+  this.playSound(this.audioContext.currentTime+BUFFER);
+};
+
+LoopPool.playSound = function(currentTime){
+  if (this.playing){
+    var currentSound = this.getSound(this.value);
+    // TODO what to do if asked to play, and no 
+    // sound in cue? (boolean above)
+    var duration = 
+        this.subscriptions[0](currentSound, currentTime);
+    // TODO prevent crash on very small durations
+    // TODO bounds and type checking on duration
+    var nextTime = currentTime+duration;
+    var timeout = duration*PADDING*1000;
+    setTimeout(this.playSound.bind(this, nextTime), timeout);
+  }
+};
+
+LoopPool.stop = function(){
+  this.playing = false;
+};
+
+LoopPool.set = function(value){
+  this.value = value;
 };
 
 module.exports = LoopPool;
