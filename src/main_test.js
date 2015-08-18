@@ -1,0 +1,2 @@
+var ClipConductor = require('./main');
+
