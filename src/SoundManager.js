@@ -18,13 +18,20 @@ SoundManager.prototype.playSound = function(handle, time){
 
     return sound.buffer.duration;
   } else {
-    console.warn('ClipConductor.SoundManager: cannot find sound: '+
-        handle);
+    console.warn(
+      'ClipConductor.SoundManager: cannot find sound: '+ handle
+    );
   }
 };
 
 SoundManager.prototype.loadFile = function(fileInfo, done, error){
-  // TODO error if fileInfo has no handle
+  if (!fileInfo.handle || !fileInfo.filename){
+    throw new Error(
+      'ClipConductor.SoundManager.loadFile: no'+
+      ' valid file info provided'
+    );
+  }
+
   return this.server.loadFile(fileInfo.filename)
 
   .then(function(data){

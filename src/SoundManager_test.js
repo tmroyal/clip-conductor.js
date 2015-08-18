@@ -262,7 +262,30 @@ describe('SoundManager', function(){
 
     });
 
-    it('should raise error if fileInfo does not contain handle');    
-    it('should raise error if fileInfo does not contain filename');    
+    it('should raise error if fileInfo does not contain handle',
+      function(){
+        fileInfo = {filename: 'testFile.mp3'};
+        manager = new SoundManager(audioContext, server);
+        expect(function(){
+          manager.loadFile(fileInfo);
+        }).to.throw(
+          'ClipConductor.SoundManager.loadFile:'+
+          ' no valid file info provided'
+        );
+      }
+    );
+
+    it('should raise error if fileInfo does not contain filename',
+      function(){
+        fileInfo = {handle: 'testFile'};
+        manager = new SoundManager(audioContext, server);
+        expect(function(){
+          manager.loadFile(fileInfo);
+        }).to.throw(
+          'ClipConductor.SoundManager.loadFile:'+
+          ' no valid file info provided'
+        );
+      }
+    );  
   });
 });
