@@ -4,7 +4,7 @@ var server;
 var backend;
 
 beforeEach(function(){
-  server = Server.new();
+  server = new Server();
 
   xhr = sinon.useFakeXMLHttpRequest();
 
