@@ -5,48 +5,64 @@ var loopPool;
 
 var testSound, testRange;
 var testSound2, testRange2;
-
-var audioContext = { currentTime: 3 };
-
+var nop = function(){ return true; };
 
 beforeEach(function(){
-  loopPool = LoopPool.new('name', audioContext);
-  loopPool.observe(function(){ return 2; });
-  testSound = { handle: 'testSound', filename:'testSound.mp3'};
+  loopPool = new LoopPool('name', nop, nop, nop);
+
+  testSound = 'testSound';
   testRange = { min: 0.1, max: 0.5};
-  testSound2 = { handle: 'testSound2', filename:'testSound2.mp3'};
+  testSound2 = 'testSound2';
   testRange2 = { min: 0.6, max: 0.9};
 });
 
 describe('LoopPool', function(){
 
-  describe('.new', function(){
-    it('should inherit from scheduler', function(){
-      var scheduler = Scheduler.new();
-      for (prop in scheduler){
-        if (scheduler.hasOwnProperty(prop)){
-          loopPool.hasOwnProperty(prop).should.be.true;
-        }
-      }
-    });
+  describe('LoopPool()', function(){
 
-    it('should set name property', function(){
-      loopPool = LoopPool.new('name');
+    it('should set properties', function(){
+      var v = function(){};
+      var t = function(){};
+      var time = function(){};
+
+      loopPool = new LoopPool('name', v, t, time);
       loopPool.name.should.equal('name');
-    });
+      loopPool.getTime.should.equal(time);
+      loopPool.verify.should.equal(v);
+      loopPool.trigger.should.equal(t);
+      loopPool.value.should.equal(0);
+      loopPool.events.should.deep.equal({});
 
-    it('should set audioContext', function(){
-      loopPool.audioContext.should.equal(audioContext);
     });
 
   });
 
   describe('.addSound', function(){
 
-    it('should add soundinfo to recognizedEvents object', function(){
+    it('should add soundinfo to recognizedEvents object', 
+      function(){
+        loopPool.addSound(testSound, testRange);
+        loopPool.events.should.deep.equal(
+          {'testSound':{sound:testSound, range:testRange}}
+        );
+      }
+    );
+
+    it('should add only handle if given file info', function(){
+      var testSound = {handle: 'testSound'};
       loopPool.addSound(testSound, testRange);
-      loopPool.recognizedEvents.should.deep.equal(
-        {'testSound':{sound:testSound, range:testRange}}
+      loopPool.events.should.deep.equal(
+        {'testSound':{sound:testSound.handle, range:testRange}}
+      );
+    });
+
+    it('should throw error if verify returns false', function(){
+      var verify = function(){ return false; };
+      loopPool = new LoopPool('name', verify);
+      expect(function(){
+        loopPool.addSound(testSound, testRange);
+      }).to.throw(
+        'ClipConductor.LoopPool: cannot verify handle: testSound'
       );
     });
 
@@ -54,7 +70,8 @@ describe('LoopPool', function(){
 
   describe('.setSound', function(){
     it('should alias setSound', function(){
-      LoopPool.addSound.should.equal(LoopPool.setSound);
+      LoopPool.prototype.addSound.should.equal(
+        LoopPool.prototype.setSound);
     });
   });
 
@@ -81,7 +98,7 @@ describe('LoopPool', function(){
     );
 
     it('should return undefined if pool is empty', function(){
-      loopPool.recognizedEvents = {};
+      loopPool.events = {};
       expect(loopPool.getSound(0.2)).to.be.undefined;
     });
 
@@ -96,7 +113,7 @@ describe('LoopPool', function(){
           sinon.stub(Math, 'random').returns(0.75);
 
           loopPool.addSound(testSound3, testRange);
-          loopPool.getSound(0.2).should.equal(testSound3);
+          loopPool.getSound(0.2).should.equal('testSound3');
         }
     );
   });
@@ -105,21 +122,27 @@ describe('LoopPool', function(){
     it('should remove the sound', function(){
       loopPool.addSound(testSound, testRange);
       loopPool.removeSound(testSound);
-      loopPool.recognizedEvents.should.deep.equal({});
+      loopPool.events.should.deep.equal({});
+    });
+
+    it('should remove sound if given file info', function(){
+      var testSound = {handle:'testSound'};
+      loopPool.addSound(testSound, testRange);
+      loopPool.removeSound(testSound);
+      loopPool.events.should.deep.equal({});
     });
   });
 
   describe('.playSound', function(){
-    it('should call to play sound immediately', function(){
-      var subscription = sinon.spy(function(){ return 3;});
-      loopPool = LoopPool.new('name', audioContext);
-      loopPool.observe(subscription);
+    it('should call trigger immediately', function(){
+      var trigger = sinon.spy(function(){ return 3;});
+      loopPool = new LoopPool('name', nop, trigger, nop);
 
       loopPool.playing = true;
       loopPool.addSound(testSound, {min:0, max: 1});
 
       loopPool.playSound(0);
-      subscription.args[0].should.deep.equal([testSound, 0]);
+      trigger.args[0].should.deep.equal([testSound, 0]);
     });
 
     it('should call itself after duration given '+
@@ -127,9 +150,8 @@ describe('LoopPool', function(){
       function(){
         var timeout = sinon.spy(window, 'setTimeout');
         var fb = sinon.spy(Function.prototype, 'bind');
-        var subscription = function(){ return 3;};
-        loopPool = LoopPool.new('name', audioContext);
-        loopPool.observe(subscription);
+        var trigger = function(){ return 3;};
+        loopPool = new LoopPool('name', nop, trigger, nop);
         loopPool.addSound(testSound, testRange);
         loopPool.playing = true;
 
@@ -143,14 +165,13 @@ describe('LoopPool', function(){
       }
     );
 
-    it('should not play a sound if it is stop has been called', 
+    it('should not trigger if stop has been called', 
       function(){
-        var subscription = sinon.spy();
-        loopPool = LoopPool.new('name', audioContext);
-        loopPool.observe(subscription);
+        var trigger = sinon.spy();
+        loopPool = new LoopPool('name', nop, trigger, nop);
         loopPool.stop(); // playing=false
         loopPool.playSound(0);
-        subscription.called.should.be.false;
+        trigger.called.should.be.false;
       });
   });
 
@@ -162,31 +183,32 @@ describe('LoopPool', function(){
 
     it('should call playsound with currentTime+buffer',
       function(){
+        var getTime = trigger = function(){return 3;};
+        
+        loopPool = new LoopPool('name', nop, trigger, getTime);
         var spy = sinon.spy(loopPool, 'playSound');
         loopPool.addSound(testSound, {min:0, max:1});
         loopPool.start();
-        // 3 defined by test fixtures above + PADDING
+        // 3.1 = getTime()+BUFFER
         spy.calledWith(3.1).should.equal(true);
         loopPool.playSound.restore();
       }
     );
 
     it('should not play if there are no sounds in cue', function(){
-      var subscription = sinon.spy();
-      loopPool = LoopPool.new('name', audioContext);
-      loopPool.observe(subscription);
+      var trigger = sinon.spy();
+      loopPool = new LoopPool('name', nop, trigger, nop);
       loopPool.playing = true;
-
       loopPool.playSound();
-      subscription.called.should.be.false;
+
+      trigger.called.should.be.false;
     });
 
     it('should set timeout to min duration if less than min duration',
       function(){
         var timeout = sinon.spy(window, 'setTimeout');
-        var subscription = function(){ return 0; };
-        loopPool = LoopPool.new('name', audioContext);
-        loopPool.observe(subscription);
+        var trigger = function(){ return 0; };
+        loopPool = new LoopPool('name', nop, trigger, nop);
         loopPool.addSound(testSound, {min:0, max:1});
         loopPool.start();
         
@@ -200,12 +222,11 @@ describe('LoopPool', function(){
     );
 
     it('should throw if duration returns non number', function(){
-      var subscription = function(){ return undefined; };
-      loopPool = LoopPool.new('name', audioContext);
-      loopPool.observe(subscription);
+      var trigger = function(){ return undefined; };
+      loopPool = new LoopPool('name', nop, trigger, nop);
       loopPool.addSound(testSound, {min:0, max:1});
       expect(function(){ loopPool.start(); })
-        .to.throw('LoopPool: duration must be a number');
+        .to.throw('ClipConductor.LoopPool: duration must be a number');
         
 
     });

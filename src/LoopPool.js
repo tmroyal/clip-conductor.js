@@ -1,41 +1,48 @@
-var Scheduler = require('./Scheduler');
 var _ = require('lodash');
 var BUFFER = 0.1, MIN_DURATION = 0.01;
 
-var LoopPool = Object.create(Scheduler);
+function LoopPool(name, verifyCB, triggerCB, timeCB){
+  this.name = name;
+  this.value = 0;
 
-LoopPool.new = function(name, audioContext){
-  var lp = Scheduler.new.call(this);
+  this.getTime = timeCB;
+  this.verify = verifyCB;
+  this.trigger = triggerCB;
+  
+  this.events = {};
+}
 
-  lp.name = name;
-  lp.value = 0;
-  lp.audioContext = audioContext;
+LoopPool.prototype.addSound = function(handle, range){
+  if (_.isObject(handle)){ handle = handle.handle; }
 
-  return lp;
-};
-
-LoopPool.addSound = function(sound, range){
-  this.recognizedEvents[sound.handle] = {
-    sound: sound, 
+  if (!this.verify(handle)){
+    throw new Error(
+      'ClipConductor.LoopPool: cannot verify handle: '+handle
+    );
+  }
+  this.events[handle] = {
+    sound: handle, 
     range: range
   };
 };
 
-LoopPool.setSound = LoopPool.addSound;
+LoopPool.prototype.setSound = LoopPool.prototype.addSound;
 
-LoopPool.removeSound = function(sound){
-  delete this.recognizedEvents[sound.handle]; 
+
+LoopPool.prototype.removeSound = function(handle){
+  if (_.isObject(handle)){ handle = handle.handle;}
+  delete this.events[handle]; 
 };
 
-LoopPool.getSound = function(value){
+LoopPool.prototype.getSound = function(value){
   var closestEvent, closestDistance = Infinity;
   var matchingEvents = [];
 
-  if (_.isEmpty(this.recognizedEvents)) { return; }
+  if (_.isEmpty(this.events)) { return; }
 
-  for (sound in this.recognizedEvents){
-    if (this.recognizedEvents.hasOwnProperty(sound)){
-      var recEvent = this.recognizedEvents[sound];
+  for (sound in this.events){
+    if (this.events.hasOwnProperty(sound)){
+      var recEvent = this.events[sound];
       var range = recEvent.range;
 
       if( value >= range.min && value <= range.max){
@@ -63,21 +70,21 @@ LoopPool.getSound = function(value){
   }
 };
 
-LoopPool.start = function(){
+LoopPool.prototype.start = function(){
   this.playing = true;  
-  this.playSound(this.audioContext.currentTime+BUFFER);
+  this.playSound(this.getTime()+BUFFER);
 };
 
-LoopPool.playSound = function(currentTime){
+LoopPool.prototype.playSound = function(currentTime){
   if (this.playing && 
-      Object.keys(this.recognizedEvents).length > 0){
+      Object.keys(this.events).length > 0){
     var currentSound = this.getSound(this.value);
 
-    var duration = 
-        this.subscriptions[0](currentSound, currentTime);
+    var duration = this.trigger(currentSound, currentTime);
     if (duration < MIN_DURATION){ duration = MIN_DURATION; }
     if (!_.isNumber(duration) || _.isNaN(duration)){
-      throw new Error('LoopPool: duration must be a number');
+      throw new Error(
+          'ClipConductor.LoopPool: duration must be a number');
     }
 
     var nextTime = currentTime+duration;
@@ -87,11 +94,11 @@ LoopPool.playSound = function(currentTime){
   }
 };
 
-LoopPool.stop = function(){
+LoopPool.prototype.stop = function(){
   this.playing = false;
 };
 
-LoopPool.set = function(value){
+LoopPool.prototype.set = function(value){
   this.value = value;
 };
 
