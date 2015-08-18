@@ -1,25 +1,18 @@
 describe('Scheduler', function(){
   var Scheduler = require('./Scheduler');
   var scheduler;
+  var nop = function(){ return true;};
+
   beforeEach(function(){
-    scheduler = Scheduler.new();
+    scheduler = new Scheduler(nop, nop);
   });
 
-  describe('observe', function(){
-    it('should add callback to list of subscriptions', function(){
-      var func = function(){};
-      scheduler.observe(func);
-      scheduler.subscriptions.should.contain(func);
-    });
-  });
-  
   describe('on', function(){
-
-    it('should add message name and file info to recognizedEvents', 
+    it('should add message name and file handle to events', 
       function(){
-        var fileInfo = { handle: 'test' };
+        var fileInfo = { handle: 'sound' };
         scheduler.on('test', fileInfo);
-        scheduler.recognizedEvents.test.should.contain(fileInfo);
+        scheduler.events['test'].should.contain('sound');
       }
     );
 
@@ -30,8 +23,23 @@ describe('Scheduler', function(){
       scheduler.on('test', fi1);
       scheduler.on('test', fi2);
 
-      scheduler.recognizedEvents.test.should.contain(fi1);
-      scheduler.recognizedEvents.test.should.contain(fi2);
+      scheduler.events.test.should.contain('test1');
+      scheduler.events.test.should.contain('test2');
+    });
+
+    it('should work with string handles', function(){
+      scheduler.on('test','handle');
+      scheduler.events.test.should.contain('handle');
+    });
+
+    it('should error on failed verification', function(){
+      var verifier = function(){ return false; };
+      scheduler = new Scheduler(null, verifier);
+      expect(function(){
+        scheduler.on('test','handle');
+      }).to.throw(  
+        'ClipConductor.Scheduler: cannot verify handle: handle'
+      );
     });
   });
 
@@ -45,23 +53,23 @@ describe('Scheduler', function(){
 
     it('should remove matching event from list', function(){
       scheduler.off('test', fileInfo);  
-      scheduler.recognizedEvents.test.should.not.contain(fileInfo);
+      scheduler.events.test.should.not.contain('test');
     });
 
     it('should do nothing if no events matching name', function(){
       var nonMatching = { handle: 'nonMatching'};
       scheduler.off('test', nonMatching);  
-      scheduler.recognizedEvents.test.should.contain(fileInfo);
+      scheduler.events.test.should.contain('test1');
     });
 
     it('should do nothing if no events matching event', function(){
       scheduler.off('nonMatching', fileInfo);  
-      scheduler.recognizedEvents.test.should.contain(fileInfo);
+      scheduler.events.test.should.contain('test1');
     });
 
     it('should do nothing if fileInfo undefined', function(){
       scheduler.off('test');  
-      scheduler.recognizedEvents.test.should.contain(fileInfo);
+      scheduler.events.test.should.contain('test1');
     });
     
   });
@@ -71,19 +79,20 @@ describe('Scheduler', function(){
 
     beforeEach(function(){
       spy = sinon.spy();
-      scheduler.observe(spy);    
+      scheduler = new Scheduler(spy, nop);
       fileInfo = { handle: 'test' };
+
       scheduler.on('testMsg', fileInfo);
     });
 
-    it('should call subscription with registered fileInfo', 
+    it('should call trigger with registered fileInfo', 
       function(){
         scheduler.trigger('testMsg');
-        spy.calledWith(fileInfo).should.be.true;
+        spy.calledWith('test').should.be.true;
       }
     );
 
-    it('should call subscription with time of zero', 
+    it('should call trigger with time of zero', 
       function(){
         scheduler.trigger('testMsg');
         spy.args[0][1].should.equal(0);
@@ -95,18 +104,17 @@ describe('Scheduler', function(){
           var fileInfo2 = { handle: 'test2' };
           scheduler.on('testMsg', fileInfo2);
           scheduler.trigger('testMsg');
-          spy.calledWith(fileInfo).should.be.true;
-          spy.calledWith(fileInfo2).should.be.true;
+          spy.calledWith('test').should.be.true;
+          spy.calledWith('test2').should.be.true;
        }
     );
 
     it('should not call subscription if no matching events', 
       function(){
         scheduler.trigger('nonEvent');
-        spy.calledWith(fileInfo).should.be.false;
+        spy.calledWith('test').should.be.false;
       }
     );
-
 
   });
 
