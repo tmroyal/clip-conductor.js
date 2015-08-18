@@ -72,12 +72,17 @@ LoopPool.playSound = function(currentTime){
   if (this.playing && 
       Object.keys(this.recognizedEvents).length > 0){
     var currentSound = this.getSound(this.value);
+
     var duration = 
         this.subscriptions[0](currentSound, currentTime);
     if (duration < MIN_DURATION){ duration = MIN_DURATION; }
-    // TODO bounds and type checking on duration
+    if (!_.isNumber(duration) || _.isNaN(duration)){
+      throw new Error('LoopPool: duration must be a number');
+    }
+
     var nextTime = currentTime+duration;
     var timeout = duration*1000;
+
     setTimeout(this.playSound.bind(this, nextTime), timeout);
   }
 };

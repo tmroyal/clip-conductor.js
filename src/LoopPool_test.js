@@ -111,7 +111,7 @@ describe('LoopPool', function(){
 
   describe('.playSound', function(){
     it('should call to play sound immediately', function(){
-      var subscription = sinon.spy();
+      var subscription = sinon.spy(function(){ return 3;});
       loopPool = LoopPool.new('name', audioContext);
       loopPool.observe(subscription);
 
@@ -190,8 +190,7 @@ describe('LoopPool', function(){
         loopPool.addSound(testSound, {min:0, max:1});
         loopPool.start();
         
-        expect(Math.abs(timeout.args[0][1]-10))
-          .to.be.below(0.0001); 
+        expect(timeout.args[0][1]).to.equal(10);
         // value should be about 10
         // = minduration*1000ms
         // = 0.01*1000
@@ -199,6 +198,18 @@ describe('LoopPool', function(){
         setTimeout.restore(); 
       }
     );
+
+    it('should throw if duration returns non number', function(){
+      var subscription = function(){ return undefined; };
+      loopPool = LoopPool.new('name', audioContext);
+      loopPool.observe(subscription);
+      loopPool.addSound(testSound, {min:0, max:1});
+      expect(function(){ loopPool.start(); })
+        .to.throw('LoopPool: duration must be a number');
+        
+
+    });
+
   });
 
   describe('.stop', function(){
