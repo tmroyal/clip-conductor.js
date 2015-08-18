@@ -1,0 +1,227 @@
+var SoundManager = require('./SoundManager');
+var scheduler, audioContext, server, manager;
+
+beforeEach(function(){
+  scheduler = {
+    observe: function(){}
+  }
+});
+
+describe.only('SoundManager', function(){
+
+  describe('SoundManager.new()', function(){
+    it('should observe scheduler', function(){
+      scheduler = {
+        observe: sinon.spy()
+      }
+      manager = SoundManager.new(audioContext, scheduler, server);
+
+      scheduler.observe.called.should.be.true;
+    });
+
+    it('should play sound on scheduler event', function(){
+      var returnObj = {
+        connect: sinon.spy(),
+        start: sinon.spy(),
+      };
+
+      var audioContext = {
+        createBufferSource: function(){
+          return returnObj;
+        },
+        destination: 'audio context destination'
+      };
+
+      var fileInfo = { handle: 'testSound' };
+
+      scheduler = {
+        observe: function(cb){
+          this.subscription = cb;
+        },
+        test: function(){
+          this.subscription(fileInfo, 3);
+        }
+      };
+      
+      manager = SoundManager.new(audioContext, scheduler, server);
+      manager.sounds['testSound'] = 'the buffer';
+      
+      scheduler.test();
+      returnObj.buffer.should.equal('the buffer');
+      returnObj.connect.calledWith(audioContext.destination)
+        .should.be.true;
+      returnObj.start.calledWith(3).should.be.true;
+    });
+
+    it('should return duration on playSound', function(){
+      var audioContext = {
+        createBufferSource: function(){
+          return { 
+            connect: function(){},
+            start: function(){},
+          };
+        },
+        destination: 'audio context destination'
+      };
+      manager = SoundManager.new(audioContext, scheduler, server);
+      manager.sounds['testSound'] = {duration: 3};
+
+      manager.playSound({handle:'testSound'})
+        .should.equal(3);
+    });
+
+    it('should set time of zero if no other value provided', function(){
+      var returnObj = {
+        start: sinon.spy(),
+        connect: function(){}
+      };
+
+      var audioContext = {
+        createBufferSource: function(){
+          return returnObj;
+        }
+      };
+
+      var fileInfo = { handle: 'testSound' };
+
+      scheduler = {
+        observe: function(cb){
+          this.subscription = cb;
+        },
+        test: function(){
+          this.subscription(fileInfo);
+        }
+      };
+      
+      manager = SoundManager.new(audioContext, scheduler, server);
+      manager.sounds['testSound'] = 'the buffer';
+      
+      scheduler.test();
+     
+      returnObj.start.calledWith(0).should.be.true;
+        
+    });
+  });
+
+  describe('loadFile',function(){
+    var fileInfo, audioContext, server, manager;
+    
+    beforeEach(function(){
+      fileInfo = {
+        filename: 'test.mp3',
+        handle: 'test'
+      };
+
+      audioContext = {
+        decodeAudioData: function(data, cb){
+          cb(); 
+        },
+        createBufferSource: function(){
+          return {
+            connect: function(destination){
+            }
+          }
+        },
+        destination: 'audio context destination'
+      };
+
+      server = {
+        loadFile: function(fn){
+          return new Promise(function(resolve){ 
+            resolve('audio data');
+          });
+        }
+      };
+    });
+
+    it('should call server.loadfile with fn', function(){
+      var spy = sinon.spy();
+
+      server.loadFile = function(fn){
+        spy(fn);
+        return new Promise(function(){});
+      };
+
+        
+      manager = SoundManager.new(audioContext, scheduler, server);
+      manager.loadFile(fileInfo);
+
+      spy.calledWith(fileInfo.filename).should.be.true;
+    });
+
+    it('should call context.decodeAudioData', function(){
+      audioContext.decodeAudioData = sinon.spy();
+
+      server.loadFile = function(fn){
+        return new Promise(function(resolve){ 
+          resolve('audio data'); 
+        });
+      };
+
+      manager = SoundManager.new(audioContext, scheduler, server);
+      return manager.loadFile(fileInfo).then(function(){ 
+        audioContext.decodeAudioData.calledWith('audio data')
+          .should.be.true;
+      });
+    });
+
+    it('should create and connect buffer stored on this.sounds',
+      function(){
+        var spy = sinon.spy();
+
+        audioContext.decodeAudioData = function(data, cb){
+          cb('the buffer');
+        }
+
+        manager = SoundManager.new(audioContext, scheduler, server);
+
+        return manager.loadFile(fileInfo).then(function(){
+          manager.sounds[fileInfo.handle]
+            .should.equal('the buffer');
+        }); 
+      }
+    );
+
+    it('should call done callback on success', function(){
+      var spy = sinon.spy();
+      manager = SoundManager.new(audioContext, scheduler, server);
+
+      return manager.loadFile(fileInfo, spy).then(function(){
+        spy.called.should.be.true;
+      });
+
+    });
+
+    it('should call error callback on encoding error', function(){
+      var spy = sinon.spy();
+
+      audioContext.decodeAudioData = function(data, succ, er){
+        er();
+      };
+      manager = SoundManager.new(audioContext, scheduler, server);
+
+      return manager.loadFile(fileInfo, null, spy).then(function(){
+        spy.called.should.be.true;
+      });
+    });
+
+    it('should call error callback on network error', function(){
+      var spy = sinon.spy();
+
+      server.loadFile = function(fn){
+        return new Promise(function(resolve, reject){
+          reject();
+        });
+      };
+
+      manager = SoundManager.new(audioContext, scheduler, server);
+
+      return manager.loadFile(fileInfo, null, spy).then(function(){
+        spy.called.should.be.true;
+      });
+
+    });
+
+    
+  });
+});

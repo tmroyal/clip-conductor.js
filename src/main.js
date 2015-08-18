@@ -1,43 +1,43 @@
 var Server = require('./Server');
-var Player = require('./Player'); 
+var SoundManager = require('./SoundManager'); 
 var Scheduler = require('./Scheduler');
 
-var ClipConductor = {
-  new: function(provServer, provScheduler, provPlayer, provAudio){
+var ClipConductor = function(deps){
+  var audioContext = deps.AudioContext;
+  if (!audioContext){ audioContext = new AudioContext(); }
+  
+  this.server = new (deps.Server || Server)(); 
 
-    var server = (provServer ? provServer : Server).new();
-    var scheduler = (provScheduler ? provScheduler : Scheduler).new();
-    var audioContext = provAudio ? provAudio : AudioContext; 
-    var player = (provPlayer ? provPlayer : Player).new( 
-        new audioContext(), scheduler, server);
+  this.soundManager = 
+    new (deps.SoundManger || SoundManger)(audioContext, server);
 
-    var cond = {};
+  this.scheduler = 
+    new (deps.Scheduler || Scheduler)(this.soundManager);
+};
 
-    cond.addSound = function(msg, soundInfo){
-      return player.loadFile(soundInfo)
-      .then(function(){
-        scheduler.on(msg, soundInfo);
-      }.bind(this))
-      .catch(function(er){
-        console.error('ClipConductor: there was a problem loading '+soundInfo.filename);
-        console.error(er);
-      });
-    };
+ClipConductor.prototype.addSound = function(msg, soundInfo){
+  return player.loadFile(soundInfo)
+  .then(function(){
+    scheduler.on(msg, soundInfo);
+  }.bind(this))
+  .catch(function(er){
+    console.error(
+      'ClipConductor: there was a problem loading '
+      +soundInfo.filename);
+    console.error(er);
+  });
+};
 
-    cond.trigger = function(msg){
-      this.scheduler.trigger(msg, 0);
-    };
+ClipConductor.prototype.trigger = function(msg){
+  this.scheduler.trigger(msg, 0);
+};
 
-    cond.addPool = function(name){
+ClipConductor.prototype.addPool = function(name){
 
-    }
+};
 
-    cond.pool = function(name){
+ClipConductor.prototype.pool = function(name){
 
-    }
-
-    return cond;
-  }
 };
 
 module.exports = ClipConductor;
