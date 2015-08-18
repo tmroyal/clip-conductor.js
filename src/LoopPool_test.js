@@ -76,7 +76,6 @@ describe('LoopPool', function(){
        ' no range encompasses value', 
        function(){
          var result = loopPool.getSound(0.59);
-         console.log(result, testSound);
          result.should.deep.equal(testSound2);
        }
     );
@@ -131,9 +130,11 @@ describe('LoopPool', function(){
         var subscription = function(){ return 3;};
         loopPool = LoopPool.new('name', audioContext);
         loopPool.observe(subscription);
+        loopPool.addSound(testSound, testRange);
         loopPool.playing = true;
 
         loopPool.playSound(0);
+
         timeout.args[0][1].should.equal(2700);
         fb.args[0][1].should.equal(3);
 
@@ -167,6 +168,34 @@ describe('LoopPool', function(){
         // 3 defined by test fixtures above + PADDING
         spy.calledWith(3.1).should.equal(true);
         loopPool.playSound.restore();
+      }
+    );
+
+    it('should not play if there are no sounds in cue', function(){
+      var subscription = sinon.spy();
+      loopPool = LoopPool.new('name', audioContext);
+      loopPool.observe(subscription);
+      loopPool.playing = true;
+
+      loopPool.playSound();
+      subscription.called.should.be.false;
+    });
+
+    it('should set timeout to min duration if less than min duration',
+      function(){
+        var timeout = sinon.spy(window, 'setTimeout');
+        var subscription = function(){ return 0; };
+        loopPool = LoopPool.new('name', audioContext);
+        loopPool.observe(subscription);
+        loopPool.addSound(testSound, {min:0, max:1});
+        loopPool.start();
+        
+        expect(Math.abs(timeout.args[0][1]-9))
+          .to.be.below(0.0001); // value should be about 9
+        // = minduration*padding*1000ms
+        // = 0.01*0.9*1000
+        
+        setTimeout.restore(); 
       }
     );
   });

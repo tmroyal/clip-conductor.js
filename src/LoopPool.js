@@ -1,6 +1,6 @@
 var Scheduler = require('./Scheduler');
 var _ = require('lodash');
-var PADDING = 0.9, BUFFER = 0.1;
+var PADDING = 0.9, BUFFER = 0.1, MIN_DURATION = 0.01;
 
 var LoopPool = Object.create(Scheduler);
 
@@ -69,13 +69,12 @@ LoopPool.start = function(){
 };
 
 LoopPool.playSound = function(currentTime){
-  if (this.playing){
+  if (this.playing && 
+      Object.keys(this.recognizedEvents).length > 0){
     var currentSound = this.getSound(this.value);
-    // TODO what to do if asked to play, and no 
-    // sound in cue? (boolean above)
     var duration = 
         this.subscriptions[0](currentSound, currentTime);
-    // TODO prevent crash on very small durations
+    if (duration < MIN_DURATION){ duration = MIN_DURATION; }
     // TODO bounds and type checking on duration
     var nextTime = currentTime+duration;
     var timeout = duration*PADDING*1000;
