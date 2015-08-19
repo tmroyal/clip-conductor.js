@@ -52,4 +52,8 @@ SoundManager.prototype.loadFile = function(fileInfo, done, error){
   .catch(error);
 };
 
+SoundManager.prototype.verify = function(handle){
+  return this.sounds.hasOwnProperty(handle); 
+};
+
 module.exports = SoundManager;

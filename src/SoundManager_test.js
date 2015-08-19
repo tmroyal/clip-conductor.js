@@ -137,6 +137,7 @@ describe('SoundManager', function(){
         'ClipConductor.SoundManager: cannot find sound: testSound'
       ).should.be.true;
       
+      console.warn.restore();
     });
 
   });
@@ -287,5 +288,19 @@ describe('SoundManager', function(){
         );
       }
     );  
+  });
+
+  describe('verify', function(){
+    it('should return true if sound is loaded', function(){
+      manager = new SoundManager(audioContext, server);
+      manager.sounds['test'] = {};
+      manager.verify('test').should.be.true;
+    });
+
+
+    it('should return flase if sound is not loaded', function(){
+      manager = new SoundManager(audioContext, server);
+      manager.verify('test').should.be.false;
+    });
   });
 });
