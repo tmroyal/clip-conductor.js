@@ -39,7 +39,7 @@ describe('SoundManager', function(){
         };
 
         manager = new SoundManager(audioContext, scheduler, server);
-        manager.sounds['testSound'] = {buffer:{duration: 3}};
+        manager.sounds['testSound'] = {buffer:{duration: 3}, info:{}};
 
         manager.playSound('testSound', 3);
         
@@ -50,7 +50,7 @@ describe('SoundManager', function(){
       }
     );
 
-    it('should return duration on playSound', function(){
+    it('should return buffer duration on playSound', function(){
       var audioContext = {
         createBufferSource: function(){
           return { 
@@ -61,11 +61,33 @@ describe('SoundManager', function(){
         destination: 'audio context destination'
       };
       manager = new SoundManager(audioContext, scheduler, server);
-      manager.sounds['testSound'] = {buffer:{duration: 3}};
+      manager.sounds['testSound'] = {buffer:{duration: 3}, info:{}};
 
       manager.playSound('testSound')
         .should.equal(3);
     });
+
+    it('should return soundinfo duration, if provided, on play',
+      function(){
+        var audioContext = {
+          createBufferSource: function(){
+            return { 
+              connect: function(){},
+              start: function(){},
+            };
+          },
+          destination: 'audio context destination'
+        };
+        manager = new SoundManager(audioContext, scheduler, server);
+        manager.sounds['testSound'] = {
+          buffer:{duration: 3},
+          info: {duration: 2}
+        };
+
+        manager.playSound('testSound')
+          .should.equal(2);
+      }
+    );
 
     it('should set time of zero if no other value provided', function(){
       var returnObj = {
@@ -80,7 +102,7 @@ describe('SoundManager', function(){
       };
 
       manager = new SoundManager(audioContext, scheduler, server);
-      manager.sounds['testSound'] = {buffer:{duration: 3}};
+      manager.sounds['testSound'] = {buffer:{duration: 3}, info:{}};
 
       manager.playSound('testSound');
       
@@ -121,7 +143,7 @@ describe('SoundManager', function(){
       };
 
       manager = new SoundManager(audioContext, scheduler, server);
-      manager.sounds['testSound'] = {buffer:{duration: 3}};
+      manager.sounds['testSound'] = {buffer:{duration: 3}, info:{}};
 
       manager.playSound({handle: 'testSound'});
       

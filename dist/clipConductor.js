@@ -12552,7 +12552,7 @@ SoundManager.prototype.playSound = function(handle, time){
     sound.connect(this.audioContext.destination);
     sound.start(time || 0);
 
-    return sound.buffer.duration;
+    return this.sounds[handle].info.duration || sound.buffer.duration;
   } else {
     console.warn(
       'ClipConductor.SoundManager: cannot find sound: '+ handle
