@@ -9,6 +9,7 @@ beforeEach(function(){
 
 describe('SoundManager', function(){
   describe('SoundManager()', function(){
+
     it('should set audio context and server', function(){
       var ac = {};
       var server = {};
@@ -16,6 +17,7 @@ describe('SoundManager', function(){
       manager.audioContext.should.equal(ac);
       manager.server.should.equal(server);
     });
+
     it('shold set sounds to empty obj', function(){
       manager.sounds.should.deep.equal({});
     });
@@ -152,8 +154,8 @@ describe('SoundManager', function(){
       };
 
       audioContext = {
-        decodeAudioData: function(data){
-          return new Promise(function(resolve){ resolve();});
+        decodeAudioData: function(data, succ){
+          succ();
         },
         createBufferSource: function(){
           return {
@@ -188,8 +190,11 @@ describe('SoundManager', function(){
     });
 
     it('should call context.decodeAudioData', function(){
-      var stub = sinon.stub(audioContext, 'decodeAudioData')
-        .returns(new Promise(function(resolve){resolve()}));
+      var stub = sinon.stub(audioContext, 'decodeAudioData', 
+        function(data, succ){
+          succ();
+        }
+      );
 
       server.loadFile = function(fn){
         return new Promise(function(resolve){ 
@@ -208,10 +213,8 @@ describe('SoundManager', function(){
       function(){
         var spy = sinon.spy();
 
-        audioContext.decodeAudioData = function(data){
-          return new Promise(function(resolve){
-            resolve('the buffer');
-          });
+        audioContext.decodeAudioData = function(data, cb){
+          cb('the buffer');
         }
 
         manager = new SoundManager(audioContext, server);

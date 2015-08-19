@@ -12572,7 +12572,11 @@ SoundManager.prototype.loadFile = function(fileInfo, done, error){
 
   .then(function(data){
 
-    this.audioContext.decodeAudioData(data, function(buffer){
+    return new Promise(function(resolve, reject){
+      this.audioContext.decodeAudioData(data, resolve, reject); 
+    }.bind(this))
+
+    .then(function(buffer){
 
       this.sounds[fileInfo.handle] = {
         buffer: buffer,
@@ -12581,7 +12585,9 @@ SoundManager.prototype.loadFile = function(fileInfo, done, error){
 
       if (done){ done(); }
 
-    }.bind(this), error);
+    }.bind(this))
+
+    .catch(error);
 
   }.bind(this))
 
