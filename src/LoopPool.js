@@ -40,7 +40,7 @@ LoopPool.prototype.getSound = function(value){
 
   if (_.isEmpty(this.events)) { return; }
 
-  for (sound in this.events){
+  for (var sound in this.events){
     if (this.events.hasOwnProperty(sound)){
       var recEvent = this.events[sound];
       var range = recEvent.range;

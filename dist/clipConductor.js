@@ -12354,65 +12354,139 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{}],2:[function(require,module,exports){
-function Player(audioContext, scheduler, server){
-  var self = this;
-  this.server = server;
-  this.sounds = {};
-  this.audioContext = audioContext;
-  scheduler.observe(this.playSound.bind(this));
+var _ = require('lodash');
+var BUFFER = 0.1, MIN_DURATION = 0.01;
+
+function LoopPool(name, verifyCB, triggerCB, timeCB){
+  this.name = name;
+  this.value = 0;
+
+  this.getTime = timeCB;
+  this.verify = verifyCB;
+  this.trigger = triggerCB;
+  
+  this.events = {};
 }
 
-Player.prototype.playSound = function(fileInfo, time){
-  if (this.sounds[fileInfo.handle]){
-    var sound = this.audioContext.createBufferSource();
-    sound.buffer = this.sounds[fileInfo.handle];
-    sound.connect(this.audioContext.destination);
-    sound.start(time || 0);
+LoopPool.prototype.addSound = function(handle, range){
+  if (_.isObject(handle)){ handle = handle.handle; }
+
+  if (!this.verify(handle)){
+    throw new Error(
+      'ClipConductor.LoopPool: cannot verify handle: '+handle
+    );
+  }
+  this.events[handle] = {
+    sound: handle, 
+    range: range
+  };
+};
+
+LoopPool.prototype.setSound = LoopPool.prototype.addSound;
+
+
+LoopPool.prototype.removeSound = function(handle){
+  if (_.isObject(handle)){ handle = handle.handle;}
+  delete this.events[handle]; 
+};
+
+LoopPool.prototype.getSound = function(value){
+  var closestEvent, closestDistance = Infinity;
+  var matchingEvents = [];
+
+  if (_.isEmpty(this.events)) { return; }
+
+  for (var sound in this.events){
+    if (this.events.hasOwnProperty(sound)){
+      var recEvent = this.events[sound];
+      var range = recEvent.range;
+
+      if( value >= range.min && value <= range.max){
+        matchingEvents.push(recEvent);
+      }
+
+      if (_.isEmpty(this.matchingEvents)){
+        var currentDistance = Math.min(
+            Math.abs(value-range.min), 
+            Math.abs(value-range.max)
+        );
+
+        if (currentDistance < closestDistance){
+          closestEvent = recEvent;
+          closestDistance = currentDistance;
+        }
+      }
+    }
+  }
+  if (matchingEvents.length > 0){
+    var ind = Math.floor(Math.random()*matchingEvents.length);
+    return matchingEvents[ind].sound;
+  } else {
+    return closestEvent.sound;
   }
 };
 
-Player.prototype.loadFile = function(fileInfo, done, error){
-  return this.server.loadFile(fileInfo.filename)
-
-  .then(function(data){
-
-    this.audioContext.decodeAudioData(data, function(buffer){
-
-      this.sounds[fileInfo.handle] = buffer;
-
-      if (done){ done(); }
-
-    }.bind(this), error);
-
-  }.bind(this))
-
-  .catch(error);
+LoopPool.prototype.start = function(){
+  this.playing = true;  
+  this.playSound(this.getTime()+BUFFER);
 };
 
-module.exports = Player;
+LoopPool.prototype.playSound = function(currentTime){
+  if (this.playing && 
+      Object.keys(this.events).length > 0){
+    var currentSound = this.getSound(this.value);
 
-},{}],3:[function(require,module,exports){
+    var duration = this.trigger(currentSound, currentTime);
+    if (duration < MIN_DURATION){ duration = MIN_DURATION; }
+    if (!_.isNumber(duration) || _.isNaN(duration)){
+      throw new Error(
+          'ClipConductor.LoopPool: duration must be a number');
+    }
+
+    var nextTime = currentTime+duration;
+    var timeout = duration*1000;
+
+    setTimeout(this.playSound.bind(this, nextTime), timeout);
+  }
+};
+
+LoopPool.prototype.stop = function(){
+  this.playing = false;
+};
+
+LoopPool.prototype.set = function(value){
+  this.value = value;
+};
+
+module.exports = LoopPool;
+
+},{"lodash":1}],3:[function(require,module,exports){
 var _ = require('lodash');
 
-function Scheduler(){
-  this.subscriptions = [];
-  this.recognizedEvents = {};
-}
-
-Scheduler.prototype.observe = function(cb){
-  this.subscriptions.push(cb);
+var Scheduler = function(triggerCB, verificationCB){
+  this.triggerCB = triggerCB;
+  this.verify = verificationCB || function(){ return true; };
+  this.events = {};
 };
 
-Scheduler.prototype.on = function(messageName, fileInfo){
-  if (this.recognizedEvents[messageName]){
-    this.recognizedEvents[messageName].push(fileInfo);
+Scheduler.prototype.on = function(messageName, handle){
+  if (_.isObject(handle)){ handle = handle.handle; }
+
+  if (!this.verify(handle)){
+    throw new Error(
+      'ClipConductor.Scheduler: cannot verify handle: '+handle
+    );
+  }
+
+  if (this.events[messageName]){
+    this.events[messageName].push(handle);
   } else {
-    this.recognizedEvents[messageName] = [fileInfo];
+    this.events[messageName] = [handle];
   }
 };
-
+  
 Scheduler.prototype.off = function(messageName, fileInfo){
-  var events = this.recognizedEvents[messageName];
+  var events = this.events[messageName];
   if (fileInfo && events){
     for (var i = 0; i < events.length; i++){
       if (_.isEqual(fileInfo, events[i])){
@@ -12423,12 +12497,10 @@ Scheduler.prototype.off = function(messageName, fileInfo){
 };
 
 Scheduler.prototype.trigger = function(messageName){
-  var matches = this.recognizedEvents[messageName];
+  var matches = this.events[messageName];
   if (matches){
     for (var match_i = 0; match_i < matches.length; match_i++){
-      for (var sub_i = 0; sub_i < this.subscriptions.length; sub_i++){
-        this.subscriptions[sub_i](matches[match_i], 0);
-      } 
+      this.triggerCB(matches[match_i], 0);
     }
   }
 };
@@ -12436,7 +12508,7 @@ Scheduler.prototype.trigger = function(messageName){
 module.exports = Scheduler;
 
 },{"lodash":1}],4:[function(require,module,exports){
-function Server(){ }
+function Server(){}
 
 Server.prototype.loadFile = function(filename){
   return new Promise(function(resolve, reject){
@@ -12456,32 +12528,122 @@ Server.prototype.loadFile = function(filename){
         }
       }
     };
-
   });
 };
 
 module.exports = Server;
 
-},{}],"ClipConductor":[function(require,module,exports){
-var Server = require('./Server');
-var Player = require('./Player'); 
-var Scheduler = require('./Scheduler');
+},{}],5:[function(require,module,exports){
+var _ = require('lodash');
 
-function ClipConductor(){
-  this.audioContext = new AudioContext();
-  this.server = new Server();
-  this.scheduler = new Scheduler();
-  this.player = new Player(this.audioContext, this.scheduler, this.server);
-} 
+var SoundManager = function(audioContext, server){
+  this.server = server;
+  this.sounds = {};
+  this.audioContext = audioContext;
+};
+
+SoundManager.prototype.playSound = function(handle, time){
+  if (_.isObject(handle)){ handle = handle.handle; }
+
+  if (this.sounds[handle]){
+    var sound = this.audioContext.createBufferSource();
+
+    sound.buffer = this.sounds[handle].buffer;
+    sound.connect(this.audioContext.destination);
+    sound.start(time || 0);
+
+    return sound.buffer.duration;
+  } else {
+    console.warn(
+      'ClipConductor.SoundManager: cannot find sound: '+ handle
+    );
+  }
+};
+
+SoundManager.prototype.loadFile = function(fileInfo, done, error){
+  if (!fileInfo.handle || !fileInfo.filename){
+    throw new Error(
+      'ClipConductor.SoundManager.loadFile: no'+
+      ' valid file info provided'
+    );
+  }
+
+  return this.server.loadFile(fileInfo.filename)
+
+  .then(function(data){
+
+    this.audioContext.decodeAudioData(data, function(buffer){
+
+      this.sounds[fileInfo.handle] = {
+        buffer: buffer,
+        info: fileInfo
+      };
+
+      if (done){ done(); }
+
+    }.bind(this), error);
+
+  }.bind(this))
+
+  .catch(error);
+};
+
+SoundManager.prototype.verify = function(handle){
+  return this.sounds.hasOwnProperty(handle); 
+};
+
+module.exports = SoundManager;
+
+},{"lodash":1}],"ClipConductor":[function(require,module,exports){
+/* jshint -W056 */
+
+var Server = require('./Server');
+var SoundManager = require('./SoundManager'); 
+var Scheduler = require('./Scheduler');
+var LoopPool = require('./LoopPool');
+var _ = require('lodash');
+
+var ClipConductor = function(deps){
+  if (!deps){ deps = {};}
+  var audioContext = deps.AudioContext;
+  if (!audioContext){ audioContext = new AudioContext(); }
+  
+  this.server = new (deps.Server || Server)(); 
+
+  this.soundManager = 
+    new (deps.SoundManager || SoundManager)(audioContext, this.server);
+
+  this.scheduler = 
+    new (deps.Scheduler || Scheduler)(
+          this.soundManager.playSound.bind(this.soundManager),
+          this.soundManager.verify.bind(this.soundManager)
+        );
+  this.pools = {};
+  this.getTime = function(){
+    return audioContext.currentTime;
+  }; 
+};
+
+ClipConductor.prototype.loadSound = function(soundInfo){
+  return this.soundManager.loadFile(soundInfo)
+  .catch(function(er){
+    console.error(
+      'ClipConductor.addSound: there was a problem loading ' +
+      soundInfo.filename);
+  });
+};
 
 ClipConductor.prototype.addSound = function(msg, soundInfo){
-  return this.player.loadFile(soundInfo)
+  return this.soundManager.loadFile(soundInfo)
+
   .then(function(){
     this.scheduler.on(msg, soundInfo);
   }.bind(this))
+
   .catch(function(er){
-    console.error('ClipConductor: there was a problem loading '+soundInfo.filename);
-    console.error(er);
+    console.error(
+      'ClipConductor.addSound: there was a problem loading ' +
+      soundInfo.filename);
   });
 };
 
@@ -12489,6 +12651,36 @@ ClipConductor.prototype.trigger = function(msg){
   this.scheduler.trigger(msg, 0);
 };
 
+ClipConductor.prototype.createPool = function(name){
+  this.pools[name] = new LoopPool(
+      name, 
+      this.soundManager.verify.bind(this.soundManager),
+      this.soundManager.playSound.bind(this.soundManager),
+      this.getTime.bind(this)
+  );
+
+};
+
+ClipConductor.prototype.pool = function(name){
+  return this.pools[name];
+};
+
+ClipConductor.prototype.triggerPool = function(name, value){
+  if (!_.isNumber(value) || _.isNaN(value)){
+    throw new Error(
+      'ClipConductor.triggerPool: must be called with numeric value'
+    );
+  }
+
+  var pool = this.pools[name]; 
+  if (pool){
+    pool.set(value);
+    return pool;
+  } else {
+    console.warn('ClipConductor.triggerPool: no pool named '+name);
+  }
+};
+
 module.exports = ClipConductor;
 
-},{"./Player":2,"./Scheduler":3,"./Server":4}]},{},["ClipConductor"]);
+},{"./LoopPool":2,"./Scheduler":3,"./Server":4,"./SoundManager":5,"lodash":1}]},{},["ClipConductor"]);

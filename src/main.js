@@ -1,3 +1,5 @@
+/* jshint -W056 */
+
 var Server = require('./Server');
 var SoundManager = require('./SoundManager'); 
 var Scheduler = require('./Scheduler');
@@ -29,8 +31,8 @@ ClipConductor.prototype.loadSound = function(soundInfo){
   return this.soundManager.loadFile(soundInfo)
   .catch(function(er){
     console.error(
-      'ClipConductor.addSound: there was a problem loading '
-      +soundInfo.filename);
+      'ClipConductor.addSound: there was a problem loading ' +
+      soundInfo.filename);
   });
 };
 
@@ -43,8 +45,8 @@ ClipConductor.prototype.addSound = function(msg, soundInfo){
 
   .catch(function(er){
     console.error(
-      'ClipConductor.addSound: there was a problem loading '
-      +soundInfo.filename);
+      'ClipConductor.addSound: there was a problem loading ' +
+      soundInfo.filename);
   });
 };
 
@@ -71,7 +73,7 @@ ClipConductor.prototype.triggerPool = function(name, value){
     throw new Error(
       'ClipConductor.triggerPool: must be called with numeric value'
     );
-  };
+  }
 
   var pool = this.pools[name]; 
   if (pool){

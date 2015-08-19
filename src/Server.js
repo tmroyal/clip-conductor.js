@@ -1,4 +1,4 @@
-function Server(){};
+function Server(){}
 
 Server.prototype.loadFile = function(filename){
   return new Promise(function(resolve, reject){

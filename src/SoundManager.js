@@ -41,7 +41,7 @@ SoundManager.prototype.loadFile = function(fileInfo, done, error){
       this.sounds[fileInfo.handle] = {
         buffer: buffer,
         info: fileInfo
-      }
+      };
 
       if (done){ done(); }
 
