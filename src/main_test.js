@@ -134,7 +134,7 @@ describe('ClipConductor', function(){
         filename: 'test.mp3'
       };
       cc.addSound('test', testInfo);
-      spy.calledWith(testInfo).should.equal.true;
+      spy.calledWith(testInfo).should.be.true;
 
       cc.soundManager.loadFile.restore();
     });
@@ -152,10 +152,10 @@ describe('ClipConductor', function(){
       };
       return cc.addSound('test', testInfo).then(function(){
         spy.args[0].should.deep.equal(['test', testInfo]);
+        cc.scheduler.on.restore(); 
+        cc.soundManager.loadFile.restore(); 
       });
 
-      cc.scheduler.on.restore(); 
-      cc.soundManager.loadFile.restore(); 
     });
 
     it('should log error if there was a problem', function(){
@@ -179,6 +179,46 @@ describe('ClipConductor', function(){
         console.error.restore();
         cc.soundManager.loadFile.restore();
       });
+    });
+  });
+
+  describe('loadSound()', function(){
+    it('should call manager.loadFile', function(){
+      cc = new ClipConductor();
+      var spy = sinon.spy(cc.soundManager, 'loadFile');
+      var testInfo = {
+        handle: 'test',
+        filename: 'test.mp3'
+      };
+      cc.loadSound(testInfo);
+      spy.calledWith(testInfo).should.be.true;
+      cc.soundManager.loadFile.restore();
+
+    });
+
+    it('should log error if soundManger rejects', function(){
+      cc = new ClipConductor();
+      var stub = sinon.stub(cc.soundManager,'loadFile', function(){
+        return new Promise(function(resolve,reject){
+          reject();
+        });
+      });
+
+      var spy = sinon.spy(console,'error');
+
+      var testInfo = {
+        handle: 'test',
+        filename: 'test.mp3'
+      };
+
+      return cc.loadSound(testInfo).then(function(){
+        spy.calledWith(
+          'ClipConductor.addSound: there was a problem loading test.mp3'
+        ).should.equal(true);
+        console.error.restore();
+        cc.soundManager.loadFile.restore();
+      });
+      
     });
   });
 

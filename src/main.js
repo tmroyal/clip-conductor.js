@@ -25,6 +25,15 @@ var ClipConductor = function(deps){
   }; 
 };
 
+ClipConductor.prototype.loadSound = function(soundInfo){
+  return this.soundManager.loadFile(soundInfo)
+  .catch(function(er){
+    console.error(
+      'ClipConductor.addSound: there was a problem loading '
+      +soundInfo.filename);
+  });
+};
+
 ClipConductor.prototype.addSound = function(msg, soundInfo){
   return this.soundManager.loadFile(soundInfo)
 
