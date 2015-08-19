@@ -1,4 +1,3 @@
-var Scheduler = require('./Scheduler');
 var LoopPool = require('./LoopPool');
 
 var loopPool;
