@@ -36,7 +36,8 @@ SoundManager.prototype.loadFile = function(fileInfo, done, error){
 
   .then(function(data){
 
-    this.audioContext.decodeAudioData(data, function(buffer){
+    return this.audioContext.decodeAudioData(data)
+    .then(function(buffer){
 
       this.sounds[fileInfo.handle] = {
         buffer: buffer,
@@ -45,7 +46,8 @@ SoundManager.prototype.loadFile = function(fileInfo, done, error){
 
       if (done){ done(); }
 
-    }.bind(this), error);
+    }.bind(this))
+    .catch(error);
 
   }.bind(this))
 
