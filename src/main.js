@@ -39,6 +39,14 @@ ClipConductor.prototype.loadSound = function(soundInfo){
   });
 };
 
+ClipConductor.prototype.loadSounds = function(soundInfoArray){
+  return Promise.all(
+    soundInfoArray.map(function(soundInfo){
+      return this.loadSound(soundInfo);
+    }.bind(this))
+  );
+}
+
 ClipConductor.prototype.on = function(msg, soundInfo){
   if (!this.soundManager.verify(soundInfo)){
     return this.loadSound(soundInfo)

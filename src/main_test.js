@@ -276,6 +276,31 @@ describe('ClipConductor', function(){
     });
   });
 
+  describe('loadSounds()', function(){
+
+    it('should call loadSound with each filename provided filename', 
+      function(){
+        var files = [
+          { handle: 't1', filename: 't1.mp3' },
+          { handle: 't2', filename: 't2.mp3' },
+          { handle: 't3', filename: 't3.mp3' },
+        ];
+        cc = new ClipConductor();
+        var stub = sinon.stub(cc, 'loadSound', function(){
+          return Promise.resolve();
+        });
+
+        return cc.loadSounds(files).then(function(){
+          stub.calledThrice.should.be.true;
+          files.forEach(function(file){
+            stub.calledWith(file).should.be.true;
+          });
+        });
+      }
+    );
+
+  });
+
   describe('trigger()', function(){
     it('should call scheduler with message and 0', function(){
       cc = new ClipConductor();
