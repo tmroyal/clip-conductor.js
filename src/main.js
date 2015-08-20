@@ -93,4 +93,4 @@ ClipConductor.prototype.triggerPool = function(name, value){
   }
 };
 
-module.exports = ClipConductor;
+window.ClipConductor = module.exports = ClipConductor;
