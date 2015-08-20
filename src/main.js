@@ -45,14 +45,14 @@ ClipConductor.prototype.loadSounds = function(soundInfoArray){
       return this.loadSound(soundInfo);
     }.bind(this))
   );
-}
+};
 
 ClipConductor.prototype.on = function(msg, soundInfo){
   if (!this.soundManager.verify(soundInfo)){
     return this.loadSound(soundInfo)
     .then(function(){
       this.scheduler.on(msg, soundInfo);
-    }.bind(this))
+    }.bind(this));
   } else {
     return Promise.resolve(this.scheduler.on(msg, soundInfo));
   }
