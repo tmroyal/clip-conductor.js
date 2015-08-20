@@ -57,13 +57,20 @@ ClipConductor.prototype.trigger = function(msg){
 };
 
 ClipConductor.prototype.createPool = function(name){
-  this.pools[name] = new this.LoopPool(
-      name, 
-      this.soundManager.verify.bind(this.soundManager),
-      this.soundManager.playSound.bind(this.soundManager),
-      this.getTime.bind(this)
-  );
+  if (this.pools[name]){
+    console.warn(
+      'ClipConductor.createPool: pool "'+name+'" already exists'
+    );
+  } else {
+    this.pools[name] = new this.LoopPool(
+        name, 
+        this.soundManager.verify.bind(this.soundManager),
+        this.soundManager.playSound.bind(this.soundManager),
+        this.getTime.bind(this)
+    );
+  }
 
+  return this.pools[name];
 };
 
 ClipConductor.prototype.pool = function(name){

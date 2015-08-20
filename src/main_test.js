@@ -319,7 +319,26 @@ describe('ClipConductor', function(){
         cc.getTime.bind.calledWith(cc).should.be.true;
       }
     );
-    it('should return the created pool');
+    it('should return the created pool', function(){
+      cc = new ClipConductor();
+      cc.createPool('test').should.be.an.instanceOf(LoopPool);
+    });
+
+    it('should not overwrite existing pools', function(){
+      var spy = sinon.spy(console, 'warn');
+
+      cc = new ClipConductor();
+      var pool1 = cc.createPool('test');
+      var pool2 = cc.createPool('test');
+
+      pool1.should.equal(pool2);
+      spy.calledWith(
+        'ClipConductor.createPool: pool "test" already exists'
+      ).should.be.true;
+
+      console.warn.restore();
+
+    });
   });
 
   describe('pool()', function(){
@@ -349,6 +368,7 @@ describe('ClipConductor', function(){
       cc.triggerPool('test', 100);
       spy.calledWith('ClipConductor.triggerPool: no pool named test')
         .should.be.true;
+
       console.warn.restore();
     });
 
