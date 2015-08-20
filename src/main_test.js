@@ -5,6 +5,7 @@ var SoundManager = require('./SoundManager');
 var Scheduler = require('./Scheduler');
 var LoopPool = require('./LoopPool');
 var nop = function(){};
+
 // to prevent making more than 6 bound AudioContext's
 window.AudioContext = function(){
   this.currentTime = 0;
@@ -33,7 +34,8 @@ describe('ClipConductor', function(){
           playSound: function(){},
           verify: function(){}
         }),
-        Scheduler: sinon.spy()
+        Scheduler: sinon.spy(),
+        LoopPool: {}
       };
 
       cc = new ClipConductor(dependencies);
@@ -43,8 +45,19 @@ describe('ClipConductor', function(){
       dependencies.Scheduler.calledWithNew().should.be.true;
       acSpy.calledWithNew().should.be.false;
 
+      cc.LoopPool.should.equal(dependencies.LoopPool);
+
       AudioContext.restore();
     }); 
+    
+    it('should set LoopPool to LoopPool modules, if not provided',
+      function(){
+        cc = new ClipConductor();
+        // potentially problematic who is to say that newer 
+        // paradigms established for require() will not break this
+        cc.LoopPool.should.equal(LoopPool); 
+      }
+    );
 
     it('should create new AudioContext if none provided',
       function(){
