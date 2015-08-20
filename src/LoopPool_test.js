@@ -180,6 +180,14 @@ describe('LoopPool', function(){
       loopPool.playing.should.be.true;
     });
 
+    it('should not call playSound if already playing', function(){
+      var spy = sinon.spy(loopPool, 'playSound');
+      loopPool.start();
+      loopPool.start();
+      spy.calledOnce.should.be.true;
+      loopPool.playSound.restore();
+    });
+
     it('should call playsound with currentTime+buffer',
       function(){
         var getTime = trigger = function(){return 3;};

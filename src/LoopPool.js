@@ -71,8 +71,10 @@ LoopPool.prototype.getSound = function(value){
 };
 
 LoopPool.prototype.start = function(){
-  this.playing = true;  
-  this.playSound(this.getTime()+BUFFER);
+  if (!this.playing){
+    this.playing = true;  
+    this.playSound(this.getTime()+BUFFER);
+  }
 };
 
 LoopPool.prototype.playSound = function(currentTime){
