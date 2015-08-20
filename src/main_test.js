@@ -117,8 +117,34 @@ describe('ClipConductor', function(){
       }
     );
 
-    // TODO figure this out
-    // it('should create scheduler using methods from soundManager');
+    it('should create scheduler using methods from soundManager', 
+      function(){
+        // https://en.wikipedia.org/wiki/Amorphophallus_titanum
+
+        var deps = {
+          Scheduler: function(trigger, verify){
+            trigger.should.equal('playSound.bind');
+            verify.should.equal('verify.bind');
+          },
+          SoundManager: function(){}
+        };
+
+        deps.SoundManager.prototype.playSound = { 
+          bind: sinon.stub().returns('playSound.bind')
+        };
+
+        deps.SoundManager.prototype.verify = {
+          bind: sinon.stub().returns('verify.bind')
+        };
+
+        cc = new ClipConductor(deps);
+
+        expect(deps.SoundManager.prototype.playSound.bind.args[0][0])
+          .to.be.instanceOf(deps.SoundManager);
+        expect(deps.SoundManager.prototype.verify.bind.args[0][0])
+          .to.be.instanceOf(deps.SoundManager);
+      }
+    );
 
   });
 
@@ -239,8 +265,48 @@ describe('ClipConductor', function(){
       cc.pools.test.should.be.an.instanceOf(LoopPool);
       cc.pools.test.name.should.equal('test');
     });
-    // TODO: how?
-    // it('should create pool with methods form soundManager');
+
+    it('should create pool with methods form soundManager', 
+      function(){
+        // https://en.wikipedia.org/wiki/Rafflesia_arnoldii
+        var deps = {
+          LoopPool: sinon.spy(),
+          SoundManager: function(){}
+        };
+
+        deps.SoundManager.prototype.playSound = { 
+          bind: sinon.stub().returns('playSound.bind')
+        };
+
+        deps.SoundManager.prototype.verify = {
+          bind: sinon.stub().returns('verify.bind')
+        };
+
+        cc = new ClipConductor(deps);
+        cc.getTime = {
+          bind: sinon.stub().returns('getTime')
+        };
+         
+        cc.createPool('test pool');
+
+        deps.LoopPool.calledWithNew().should.be.true;
+        deps.LoopPool.args[0].should.deep.equal(
+          [
+            'test pool',
+            'verify.bind',
+            'playSound.bind',
+            'getTime'
+          ]
+        );
+
+        expect(deps.SoundManager.prototype.playSound.bind.args[1][0])
+          .to.be.instanceOf(deps.SoundManager);
+        expect(deps.SoundManager.prototype.verify.bind.args[1][0])
+          .to.be.instanceOf(deps.SoundManager);
+        cc.getTime.bind.calledWith(cc).should.be.true;
+      }
+    );
+    it('should return the created pool');
   });
 
   describe('pool()', function(){

@@ -10,6 +10,8 @@ var ClipConductor = function(deps){
   if (!deps){ deps = {};}
   var audioContext = deps.AudioContext;
   if (!audioContext){ audioContext = new AudioContext(); }
+
+  this.LoopPool = deps.LoopPool || LoopPool;
   
   this.server = new (deps.Server || Server)(); 
 
@@ -55,7 +57,7 @@ ClipConductor.prototype.trigger = function(msg){
 };
 
 ClipConductor.prototype.createPool = function(name){
-  this.pools[name] = new LoopPool(
+  this.pools[name] = new this.LoopPool(
       name, 
       this.soundManager.verify.bind(this.soundManager),
       this.soundManager.playSound.bind(this.soundManager),
