@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html>
+<head>
+</head>
+<body>
+
+<div>
+  <h1>One Offs</h1>
+  <pre>
+var cond = new ClipConductor();
+cond.loadSound({handle:'sound', filename:'sound.mp3'})
+    .then(function(){
+      cond.on('triggerSound', 'sound');
+      cond.trigger('triggerSound');
+    });
+</pre>
+  <button class="oneOff" id="cymbal" disabled="true">cymbal</button>
+  <button class="oneOff" id="icebells" disabled="true">icebells</button>
+  <button class="oneOff" id="tympani" disabled="true">tympani</button>
+</div>
+
+<div>
+  <h1>Adaptive Looping</h1>
+  <pre>
+var cond = new ClipConductor();
+var sounds = [
+  {handle: 's1', filename: 's1.mp3'},
+  {handle: 's2', filename: 's2.mp3'},
+  {handle: 's3', filename: 's3.mp3'}
+];
+var pool;
+cond.loadSounds(sounds)
+    .then(function(){
+      pool = cond.createPool('thePool');
+      pool.addSound('s1', {min: 0, max: 0.9, duration: 1});
+      pool.addSound('s2', {min: 1, max: 1.9, duration: 2}); // may specify different durations
+                                                          // loops seamlessly
+      pool.addSound('s3', {min: 2, max: 2.9}); // if no duration given, takes from sound file
+
+      pool.start();
+      pool.set(0);
+
+      setTimeout(function(){pool.set(1);}, 1000);
+      setTimeout(function(){pool.set(2);}, 2000);
+
+      setTimeout(function(){pool.stop();}, 3000); // stops at completion of sound file
+    });
+  </pre>
+  <button id="loopStart" disabled="true">Start Loop</button>
+  <button id="loopEnd" disabled="true">End Loop</button>
+
+  <select id="loopTension">
+    <option>0</option>
+    <option>1</option>
+    <option>2</option>
+    <option>3</option>
+    <option>4</option>
+    <option>4.5</option>
+    <option>5</option>
+    <option>6</option>
+  </select>
+</div>
+
+
+<script src="./clip-conductor.js/dist/clipConductor.js"></script>
+<script>
+
+var cond = new ClipConductor();
+
+var files = [
+  {handle: 't1a', filename: 'clips/tension/t1a.mp3', duration: 2.9},
+  {handle: 't1b', filename: 'clips/tension/t1b.mp3', duration: 2.71875},
+  {handle: 't1c', filename: 'clips/tension/t1c.mp3', duration: 3.08125},
+  {handle: 't1d', filename: 'clips/tension/t1d.mp3', duration: 2.71875},
+  {handle: 't1e', filename: 'clips/tension/t1e.mp3', duration: 2.9},
+  {handle: 't1f', filename: 'clips/tension/t1f.mp3', duration: 1.45},
+  {handle: 't2b', filename: 'clips/tension/t2a.mp3', duration: 2.9},
+  {handle: 't2c', filename: 'clips/tension/t2b.mp3', duration: 2.71875},
+  {handle: 't2d', filename: 'clips/tension/t2c.mp3', duration: 3.08125},
+  {handle: 't2d', filename: 'clips/tension/t2d.mp3', duration: 2.71875},
+  {handle: 't2e', filename: 'clips/tension/t2e.mp3', duration: 2.9},
+  {handle: 't2f', filename: 'clips/tension/t2f.mp3', duration: 1.45},
+  {handle: 't3b', filename: 'clips/tension/t3a.mp3', duration: 2.9},
+  {handle: 't3b', filename: 'clips/tension/t3b.mp3', duration: 2.71875},
+  {handle: 't3c', filename: 'clips/tension/t3c.mp3', duration: 3.08125},
+  {handle: 't3d', filename: 'clips/tension/t3d.mp3', duration: 2.71875},
+  {handle: 't3e', filename: 'clips/tension/t3e.mp3', duration: 2.9},
+  {handle: 't3f', filename: 'clips/tension/t3f.mp3', duration: 1.45},
+  {handle: 't4a', filename: 'clips/tension/t4a.mp3', duration: 2.175},
+  {handle: 't4b', filename: 'clips/tension/t4b.mp3', duration: 2.9},
+  {handle: 't4c', filename: 'clips/tension/t4c.mp3', duration: 2.9},
+  {handle: 't4d', filename: 'clips/tension/t4d.mp3', duration: 2.9},
+  {handle: 't4e', filename: 'clips/tension/t4e.mp3', duration: 2.9},
+  {handle: 't4f', filename: 'clips/tension/t4f.mp3', duration: 2.71875 },
+  {handle: 't4g', filename: 'clips/tension/t4g.mp3', duration: 5.075},
+  {handle: 't5a', filename: 'clips/tension/t5a.mp3', duration: 2.175},
+  {handle: 't5b', filename: 'clips/tension/t5b.mp3', duration: 2.9},
+  {handle: 't5c', filename: 'clips/tension/t5c.mp3', duration: 2.9},
+  {handle: 't5d', filename: 'clips/tension/t5d.mp3', duration: 2.9},
+  {handle: 't5e', filename: 'clips/tension/t5e.mp3', duration: 2.9},
+  {handle: 't5f', filename: 'clips/tension/t5f.mp3', duration: 2.71875 },
+  {handle: 't5g', filename: 'clips/tension/t5g.mp3', duration: 5.075},
+  {handle: 't6a', filename: 'clips/tension/t6a.mp3', duration: 2.175},
+  {handle: 't6b', filename: 'clips/tension/t6b.mp3', duration: 2.71875},
+  {handle: 't6c', filename: 'clips/tension/t6c.mp3', duration: 2.9},
+  {handle: 't6d', filename: 'clips/tension/t6d.mp3', duration: 2.9},
+  {handle: 't6e', filename: 'clips/tension/t6e.mp3', duration: 2.9},
+  {handle: 't6f', filename: 'clips/tension/t6f.mp3', duration: 2.71875 },
+  {handle: 't6g', filename: 'clips/tension/t6g.mp3', duration: 5.075},
+  {handle: 't7a', filename: 'clips/tension/t7a.mp3', duration: 2.9},
+  {handle: 't7b', filename: 'clips/tension/t7b.mp3', duration: 2.9},
+  {handle: 't7c', filename: 'clips/tension/t7c.mp3', duration: 2.9},
+  {handle: 't7d', filename: 'clips/tension/t7d.mp3', duration: 2.9},
+  {handle: 't7e', filename: 'clips/tension/t7e.mp3', duration: 2.9},
+  {handle: 't7f', filename: 'clips/tension/t7f.mp3', duration: 2.9}
+];
+
+var oneoffs = [
+  {handle: 'icebells', filename: 'clips/icebells.mp3'},
+  {handle: 'cymbal', filename: 'clips/cymbal.mp3'},
+  {handle: 'tympani', filename: 'clips/tympani.mp3'}
+];
+
+var ranges = {
+  1: {min: 0, max: 0.9}, 
+  2: {min: 1, max: 1.9},
+  3: {min: 2, max: 2.9},
+  4: {min: 3, max: 4.4},
+  5: {min: 3.5, max: 4.9},
+  6: {min: 5, max: 5.9},
+  7: {min: 6, max: 7}
+};
+
+cond.loadSounds(files)
+.then(function(){
+  return cond.loadSounds(oneoffs);
+})
+.then(function(){
+  var tension = cond.createPool('tension');
+
+  files.forEach(function(file){
+    var range = ranges[file.handle[1]];
+    tension.addSound(file, range);
+  });
+
+  oneoffs.forEach(function(file){
+    cond.on(file.handle, file.handle);
+  });
+
+  var buttons = document.querySelectorAll('.oneOff')
+
+  for (var i = 0; i < buttons.length; i++){
+    (function(index){
+      buttons[index].onclick = function(){
+        cond.trigger(buttons[index].id);  
+      };
+    })(i);
+    buttons[i].disabled = false;
+  }
+
+  var startButton = document.getElementById('loopStart');
+  startButton.disabled = false;
+  startButton.onclick = function(){
+    tension.start();
+  };
+
+  var endButton = document.getElementById('loopEnd');
+  endButton.disabled = false;
+  endButton.onclick = function(){
+    tension.stop();
+  };
+
+  var tensionSelect = document.getElementById('loopTension');
+  tensionSelect.disabled = false;
+  tensionSelect.onchange = function(e){
+    tension.set(parseFloat(e.target.value));
+  };
+
+})
+
+</script>
+</body>
+</html>
