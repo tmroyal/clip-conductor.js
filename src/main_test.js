@@ -161,64 +161,79 @@ describe('ClipConductor', function(){
 
   });
 
-  describe('addSound()', function(){
+  describe('on()', function(){
     beforeEach(function(){
       cc = new ClipConductor();
     });
 
-    it('should call soundManager.loadFile with soundinfo', function(){
-      var spy = sinon.spy(cc.soundManager, 'loadFile');
-      var testInfo = {
-        handle: 'test',
-        filename: 'test.mp3'
-      };
-      cc.addSound('test', testInfo);
-      spy.calledWith(testInfo).should.be.true;
+    it('should call cond.loadSound with soundinfo '+
+            ' if file not loaded', 
+      function(){
+        var spy = sinon.spy(cc, 'loadSound');
 
-      cc.soundManager.loadFile.restore();
-    });
+        var testInfo = {
+          handle: 'test',
+          filename: 'test.mp3'
+        };
 
-    it('should call scheduler.on with msg and soundinfo', function(){
-      var spy = sinon.spy(cc.scheduler,'on');
-      var stub = sinon.stub(cc.soundManager,'loadFile', function(){
-        return new Promise(function(resolve){
-          resolve();
+        var res = cc.on('test', testInfo);
+        spy.calledWith(testInfo).should.be.true;
+        res.should.be.instanceOf(Promise);
+        cc.loadSound.restore();
+      }
+    );
+
+    it('should call scheduler on after sound loaded '+
+        'if file not loaded originally',
+      function(){
+        var deps = {
+          SoundManager: function(){
+            this.loadSound = function(){
+              return Promise.resolve();
+            };
+
+            this.verify = function(){
+              return true;
+            };
+            this.playSound = function(){};
+          }
+        };
+
+        var cc = new ClipConductor(deps);
+
+        var schedulerOn = sinon.spy(cc.scheduler, 'on');
+
+        var testInfo = {
+          handle: 'test',
+          filename: 'test.mp3'
+        };
+        
+        return cc.on('test', testInfo).then(function(){
+          schedulerOn.calledWith('test', testInfo).should.be.true;
+          cc.scheduler.on.restore();
         });
-      });
-      var testInfo = {
-        handle: 'test',
-        filename: 'test.mp3'
-      };
-      return cc.addSound('test', testInfo).then(function(){
-        spy.args[0].should.deep.equal(['test', testInfo]);
-        cc.scheduler.on.restore(); 
-        cc.soundManager.loadFile.restore(); 
-      });
 
-    });
+      }
+    );
 
-    it('should log error if there was a problem', function(){
-      var stub = sinon.stub(cc.soundManager,'loadFile', function(){
-        return new Promise(function(resolve,reject){
-          reject();
+    it('should call scheduler.on with msg and soundinfo'+
+       ' if file already loaded', 
+      function(){
+        var spy = sinon.spy(cc.scheduler, 'on');
+        cc.scheduler.verify = cc.soundManager.verify = 
+           function(){ return true; }
+
+        var testInfo = {
+          handle: 'test',
+          filename: 'test.mp3'
+        };
+
+        return cc.on('test', testInfo).then(function(){
+          spy.calledWith('test', testInfo).should.be.true;
         });
-      });
+      }
+    );
 
-      var spy = sinon.spy(console,'error');
-
-      var testInfo = {
-        handle: 'test',
-        filename: 'test.mp3'
-      };
-
-      return cc.addSound('test', testInfo).then(function(){
-        spy.calledWith(
-          'ClipConductor.addSound: there was a problem loading test.mp3'
-        ).should.equal(true);
-        console.error.restore();
-        cc.soundManager.loadFile.restore();
-      });
-    });
   });
 
   describe('loadSound()', function(){

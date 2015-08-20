@@ -8,6 +8,7 @@ var _ = require('lodash');
 
 var ClipConductor = function(deps){
   if (!deps){ deps = {};}
+
   var audioContext = deps.AudioContext;
   if (!audioContext){ audioContext = new AudioContext(); }
 
@@ -38,18 +39,15 @@ ClipConductor.prototype.loadSound = function(soundInfo){
   });
 };
 
-ClipConductor.prototype.addSound = function(msg, soundInfo){
-  return this.soundManager.loadFile(soundInfo)
-
-  .then(function(){
-    this.scheduler.on(msg, soundInfo);
-  }.bind(this))
-
-  .catch(function(er){
-    console.error(
-      'ClipConductor.addSound: there was a problem loading ' +
-      soundInfo.filename);
-  });
+ClipConductor.prototype.on = function(msg, soundInfo){
+  if (!this.soundManager.verify(soundInfo)){
+    return this.loadSound(soundInfo)
+    .then(function(){
+      this.scheduler.on(msg, soundInfo);
+    }.bind(this))
+  } else {
+    return Promise.resolve(this.scheduler.on(msg, soundInfo));
+  }
 };
 
 ClipConductor.prototype.trigger = function(msg){
