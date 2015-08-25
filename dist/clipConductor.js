@@ -12357,17 +12357,60 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
 var _ = require('lodash');
 var BUFFER = 0.1, MIN_DURATION = 0.01;
 
+/**
+ * A collection of itmes that are triggered randomly, one after the other,
+ * according to their duration. Items are triggered if their range 
+ * encompases the current value of the pool, unless no item has
+ * a range that encompasses the value, in which case the item whose range
+ * is nearest the current value is triggered.
+ * @class
+ *
+ * @param {string} name the name of the pool
+ * @param {verifyCB} verifyCB optional callback used to determine whether 
+ *        a sound should be added to the pool
+ * @param {triggerCB} triggerCB callback that triggers the item
+ * @param {timeCB} timeCB callback that should return the time since the beginning
+ *        in the manner of AudioContext.getTime() 
+ */
+
+/**
+ * The range at which an item is triggered
+ * @typedef {object} LoopPoolRange
+ * @property {number} min minimum value at which item can be triggered
+ * @property {number} max maximum value at which item can be triggered
+ */
+
+/**
+ * Object representing the association between a sound and a range
+ * @typedef LoopPoolEvent
+ * @property {string} sound - the handle of the sound
+ * @property {LoopPoolRange} range - the range of the sound
+ */
+
 function LoopPool(name, verifyCB, triggerCB, timeCB){
   this.name = name;
+  // Value of the pool, which is used to determine which items to play
+  // @type number 
   this.value = 0;
 
   this.getTime = timeCB;
-  this.verify = verifyCB;
+  this.verify = verifyCB || function(){ return true; };
   this.trigger = triggerCB;
+
+  // whether the loopPool is playing
+  // @type boolean
+  this.playing = false;
   
   this.events = {};
 }
 
+/**
+ * Creates an association between a sound and a range
+ *
+ * @method addSound
+ * @param {string} handle - handle of the sound
+ * @param {LoopPoolRange} range - range of the sound
+ */
 LoopPool.prototype.addSound = function(handle, range){
   if (_.isObject(handle)){ handle = handle.handle; }
 
@@ -12382,14 +12425,30 @@ LoopPool.prototype.addSound = function(handle, range){
   };
 };
 
+/**
+ * @alias addSound
+ */
 LoopPool.prototype.setSound = LoopPool.prototype.addSound;
 
 
+/**
+ * remove item from LoopPool
+ * @method removeSound
+ * @param {string} handle - the name of the item to remove
+ */
 LoopPool.prototype.removeSound = function(handle){
   if (_.isObject(handle)){ handle = handle.handle;}
   delete this.events[handle]; 
 };
 
+/**
+ * choose random item from collection of LoopPoolEvents
+ * whose range encompasses given value. If no items
+ * encomass range, return item nearest the range.
+ * @method getSound
+ * @param {number} value - given value
+ * @returns {LoopPoolEvent|undefined} matching item, or undefined if there are no items
+ */
 LoopPool.prototype.getSound = function(value){
   var closestEvent, closestDistance = Infinity;
   var matchingEvents = [];
@@ -12426,6 +12485,10 @@ LoopPool.prototype.getSound = function(value){
   }
 };
 
+/**
+ * starts the LoopPool
+ * @method start
+ */
 LoopPool.prototype.start = function(){
   if (!this.playing){
     this.playing = true;  
@@ -12433,6 +12496,13 @@ LoopPool.prototype.start = function(){
   }
 };
 
+/**
+ * if this.playing, and there are sounds to play, plays a sound
+ * at time provided in parameter. The function sets a timeout
+ * that calls playSound after ther duration of the current sound.
+ * @method playSound
+ * @param {number} currentTime
+ */
 LoopPool.prototype.playSound = function(currentTime){
   if (this.playing && 
       Object.keys(this.events).length > 0){
@@ -12452,10 +12522,19 @@ LoopPool.prototype.playSound = function(currentTime){
   }
 };
 
+/**
+ * Stop initiating new events.
+ * @method stop
+ */
 LoopPool.prototype.stop = function(){
   this.playing = false;
 };
 
+/**
+ * Set the loopPool value
+ * @method set
+ * @param {number} value the value to set
+ */
 LoopPool.prototype.set = function(value){
   this.value = value;
 };
@@ -12465,14 +12544,53 @@ module.exports = LoopPool;
 },{"lodash":1}],3:[function(require,module,exports){
 var _ = require('lodash');
 
+/**
+ * Triggers callbacks in response to messages,
+ * with optional verificaton.
+ * @class
+ *
+ * @param {triggerCB} triggerCB callback called when Scheduler.trigger is called.
+ * @param {verificationCB} [verificationCB] Scheduler.on can optionally be asked to 
+ *        verify whether to setup an event binding based on whatever conditions are neccesary.
+ */
+
+/**
+ * Callback used as scheduler trigger 
+ * @callback triggerCB
+ * @param {String} handle Text usually used for identification purposes
+ * @param {Number} time A number usually used to represent time
+ */
+
+/**
+ * Callback used to verify whether message can be initiated.
+ * @callback verificationCB
+ * @param {String} handle Text usually used for identification purposes. 
+ *        Should be the same as the triggerCB handle parameter.
+ *
+ * @returns {Boolean} Whether handle is verified or not.
+ */
+
 var Scheduler = function(triggerCB, verificationCB){
   this.triggerCB = triggerCB;
   this.verify = verificationCB || function(){ return true; };
+  // Object containing arrays of handles to be 
+  // used as the argument to triggerCB when Scheduler.trigger
+  // is called.
   this.events = {};
 };
 
+/**
+ * Attaches a handle to a messageName, with optional verification. 
+ * Multiple handles can be attached to a single messageName.
+ * Creates a new key on Scheduler.events if it doesn't exist.
+ * @method on
+ *
+ * @param {String} messageName the name of the event 
+ * @param {String} handle the handle to attach the event
+ */
 Scheduler.prototype.on = function(messageName, handle){
   if (_.isObject(handle)){ handle = handle.handle; }
+
 
   if (!this.verify(handle)){
     throw new Error(
@@ -12487,17 +12605,31 @@ Scheduler.prototype.on = function(messageName, handle){
   }
 };
   
-Scheduler.prototype.off = function(messageName, fileInfo){
+/**
+ * Dissassociates handle from event. Does not remove
+ * key from Scheduler.events
+ * @method off
+ *
+ * @param {String} messageName The event name.
+ * @param {String} handle The handle to dissaccociate from event.
+ */
+Scheduler.prototype.off = function(messageName, handle){
   var events = this.events[messageName];
-  if (fileInfo && events){
+  if (handle && events){
     for (var i = 0; i < events.length; i++){
-      if (_.isEqual(fileInfo, events[i])){
+      if (_.isEqual(handle, events[i])){
         events.splice(i,1);
       }
     }
   }
 };
 
+/**
+ * Triggers all handles associated with message
+ * @method trigger
+ *
+ * @param {String} the message name
+ */
 Scheduler.prototype.trigger = function(messageName){
   var matches = this.events[messageName];
   if (matches){
@@ -12510,8 +12642,21 @@ Scheduler.prototype.trigger = function(messageName){
 module.exports = Scheduler;
 
 },{"lodash":1}],4:[function(require,module,exports){
+/**
+ * Simple communication with server.
+ * @class
+ */
 function Server(){}
 
+/**
+ * Request a file with the given name.
+ * @method loadFile
+ *
+ * @param {String} filename url path of the file
+ *
+ * @returns {Promise.<arraybuffer,Error>} Promise returns an array buffer if resolved
+ *          or an error if there is a network error
+ */
 Server.prototype.loadFile = function(filename){
   return new Promise(function(resolve, reject){
     var request = new XMLHttpRequest();
@@ -12538,12 +12683,56 @@ module.exports = Server;
 },{}],5:[function(require,module,exports){
 var _ = require('lodash');
 
+/**
+ * Loads, stores, and plays sounds
+ * @class
+ *
+ * @param {AudioContext} audioContext a web audio instance, or an
+ *        object with an identical interface.
+ * @param {Server} server an instance of a Server, or an object
+ *        with an identical interface
+ */
+
+/**
+ * The sound that is stored
+ * @typedef SoundManagerSound
+ * @type {Object}
+ * @property {SoundManagerSoundInfo} info - information about the
+ * @property {AudioBuffer} buffer
+ */
+
+/** 
+ * @typedef SoundManagerSoundInfo
+ * @type {Object}
+ * @param {String} filename - the path of the sound
+ * @param {String} handle - the handle, or name, of the sound
+ * @param {Number} [duration] - optional duration of the sound
+ */ 
+
 var SoundManager = function(audioContext, server){
   this.server = server;
+  /**
+   * Collection of SoundManagerSound's, with each key being identical to the sound handle
+   * @type Object<string, SoundManagerSound>
+   */
   this.sounds = {};
   this.audioContext = audioContext;
 };
 
+/*
+ * Play the sound at the specified time if it exists
+ * Warn if given sound does not exist
+ * @method playSound
+ *
+ * @param {String|SoundManagerSoundInfo} handle the handle or sound
+ *        info for the sound. Only the handle needs to match the sound 
+ *        loaded by loadSound
+ * @param {number} time the time that the sound needs to be played, which
+ *        behaves identically to the WebAudio API.
+ *
+ * @returns {number} the duration in seconds of the sound as defined either by SoundManagerSoundInfo
+ *          provided, or the duration of the AudioBuffer
+ */
 SoundManager.prototype.playSound = function(handle, time){
   if (_.isObject(handle)){ handle = handle.handle; }
 
@@ -12562,6 +12751,16 @@ SoundManager.prototype.playSound = function(handle, time){
   }
 };
 
+/**
+ * load the sound file
+ * @method
+ *
+ * @param {SoundManagerSoundInfo} sound info for file to be loaded
+ * @param {Function} [done] Optional callback, called with no params, when file is loaded
+ * @param {Function} [error] Optional callback, called with error, if one occurs.
+ *
+ * @returns {Promise} resolves on success, rejects on error
+ */
 SoundManager.prototype.loadFile = function(fileInfo, done, error){
   if (!fileInfo.handle || !fileInfo.filename){
     throw new Error(
@@ -12596,6 +12795,15 @@ SoundManager.prototype.loadFile = function(fileInfo, done, error){
   .catch(error);
 };
 
+/**
+ * Determines whether or not a sound has been loaded.
+ * @method
+ *
+ * @param {String} handle - the handle of the file
+ * 
+ * @returns {boolean} whether sound associated with given handle is loaded
+ */
+
 SoundManager.prototype.verify = function(handle){
   return this.sounds.hasOwnProperty(handle); 
 };
@@ -12610,6 +12818,20 @@ var SoundManager = require('./SoundManager');
 var Scheduler = require('./Scheduler');
 var LoopPool = require('./LoopPool');
 var _ = require('lodash');
+
+/**
+ * Adaptive audio library for the web audio api
+ *
+ * @class
+ * @param {object} [deps] Dependencies - useful if you wish to prive 
+ *        alternative versions of the dependencies (i.e. an IE compatible web audio library)
+ * @param {object} [deps.audioContext] - an object that responds to the same methods as an
+ *        instansiated AudioContext()
+ * @param {object} [deps.LoopPool] - an object that behaves as a LoopPool class
+ * @param {object} [deps.Server] - an object that behaves as a server class
+ * @param {object} [deps.SoundManager] - an object that behaves as a sound manager class
+ * @param {object} [deps.Scheduler] - an object that behaves as a scheduler class
+ */
 
 var ClipConductor = function(deps){
   if (!deps){ deps = {};}
@@ -12629,12 +12851,22 @@ var ClipConductor = function(deps){
           this.soundManager.playSound.bind(this.soundManager),
           this.soundManager.verify.bind(this.soundManager)
         );
+  // collection of instansiated sound pools
+  // @type object<string, LoopPool>
   this.pools = {};
+  
+  // method that gets currentTime from audioContext
   this.getTime = function(){
     return audioContext.currentTime;
   }; 
 };
 
+/**
+ * Load and store a sound from the server 
+ * @method loadSound
+ * @param {SoundManagerSoundInfo} soundInfo info for the sound to load
+ * @returns {Promise} resolves on success, rejects on error
+ */
 ClipConductor.prototype.loadSound = function(soundInfo){
   return this.soundManager.loadFile(soundInfo)
   .catch(function(er){
@@ -12644,6 +12876,12 @@ ClipConductor.prototype.loadSound = function(soundInfo){
   });
 };
 
+/**
+ * Load and store a set of sounds from the server
+ * @method loadSounds
+ * @param {SoundManagerSoundInfo[]} soundInfoArray array of info to load sounds
+ * @returns {Promise} resolves on success, rejects on error
+ */
 ClipConductor.prototype.loadSounds = function(soundInfoArray){
   return Promise.all(
     soundInfoArray.map(function(soundInfo){
@@ -12652,6 +12890,13 @@ ClipConductor.prototype.loadSounds = function(soundInfoArray){
   );
 };
 
+/**
+ * Attaches a sound to a message, and loads the sound if it hasn't been loaded already
+ * @method on
+ * @param {string} msg the message to associate with the sound
+ * @param {SoundManagerSoundInfo} soundInfo the sound to associate and optionally load
+ * @returns {Promise} resolves when sound loads (or immediately if already loaded), reject on error
+ */
 ClipConductor.prototype.on = function(msg, soundInfo){
   if (!this.soundManager.verify(soundInfo)){
     return this.loadSound(soundInfo)
@@ -12663,10 +12908,21 @@ ClipConductor.prototype.on = function(msg, soundInfo){
   }
 };
 
+/**
+ * trigger sound that has already been associated using the on method
+ * @method trigger
+ * @param {string} msg - the message associated with the desired sound
+ */
 ClipConductor.prototype.trigger = function(msg){
   this.scheduler.trigger(msg, 0);
 };
 
+/**
+ * Creates a LoopPool of the given name
+ * @method createPool
+ * @param {string} name - name of the pool
+ * @returns {LoopPool} the newly created LoopPool
+ */
 ClipConductor.prototype.createPool = function(name){
   if (this.pools[name]){
     console.warn(
@@ -12684,10 +12940,23 @@ ClipConductor.prototype.createPool = function(name){
   return this.pools[name];
 };
 
+/**
+ * get a reference to a pool, if it exists
+ * @method pool
+ * @param {string} name the name of the pool to retrieve
+ * @returns {LoopPool} the loop pool
+ */
 ClipConductor.prototype.pool = function(name){
   return this.pools[name];
 };
 
+/**
+ * Set the value of a LoopPool
+ * @method triggerPool
+ * @param {string} name the name of the pool
+ * @param {number} value the value to set the pool
+ * @returns {LoopPool} returns the loop pool whose value has been set
+ */
 ClipConductor.prototype.triggerPool = function(name, value){
   if (!_.isNumber(value) || _.isNaN(value)){
     throw new Error(
